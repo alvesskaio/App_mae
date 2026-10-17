@@ -1,0 +1,10 @@
+{
+  "name": "app-mae",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Protótipo funcional do App Mãe (PWA estático, dados no aparelho).",
+  "scripts": {
+    "dev": "npx wrangler pages dev ./public",
+    "deploy": "npx wrangler pages deploy ./public --project-name app-mae"
+  }
+}
