@@ -1,13 +1,19 @@
 # App Mãe (protótipo funcional)
 
-Site instalável (PWA) feito em Next.js (App Router, TypeScript) e exportado como site estático, para testar o design e o fluxo: cadastrar filho, guardar consultas e exames, digitar notas e ver quanto falta em cada matéria, além de uma conversa simulada de WhatsApp.
+Site instalável (PWA) feito em Next.js (App Router, TypeScript) e exportado como site estático, para testar o design e o fluxo de um app para mães: da gestação até a escola, com um perfil por filho, e uma conversa simulada de WhatsApp. Fonte: Open Sans (títulos em ExtraBold).
 
 ## O que funciona e o que não funciona
 
-- Funciona: cadastro de filhos, compromissos, documentos (foto), matérias e notas com cálculo (média anual 6,0, 4 bimestres), dados de exemplo, instalar na tela inicial.
-- Dados ficam só no navegador do aparelho (localStorage). Não há servidor, conta ou login. Limpar os dados do site apaga tudo, e outro aparelho não vê nada.
+- Cadastro em 3 etapas, com o consentimento antes de qualquer pergunta de saúde: está grávida (data prevista opcional), filhos, rotina. Consentimento de estatísticas é separado e opcional.
+- Fases por idade, sem escolha manual: gestação, primeiro ano, primeiros passos, pré-escola, escola. A mãe diz se está grávida e informa o nascimento de cada filho; a fase de cada perfil é calculada e muda sozinha. Notas e boletim só aparecem na fase escola.
+- Hoje junta os compromissos de todos os filhos, com o nome do filho em texto em cada linha. Seletor de filho em folha inferior.
+- Gestação: semanas calculadas pela data prevista, editar data e gêmeos, registrar nascimento (gêmeos viram dois perfis), encerrar acompanhamento (guardar escondido ou apagar). Filho encerrado some de Hoje, da conversa e dos lembretes.
+- Eu: rotina, silêncio, consentimentos, baixar dados (JSON), apagar tudo, dados de exemplo.
+- Compromissos, documentos (foto), matérias e notas com cálculo (média anual 6,0, 4 bimestres).
+- Dados ficam só no navegador (localStorage, chave `appmae.v2`). Não há servidor, conta ou login. Limpar os dados do site apaga tudo, e outro aparelho não vê nada. Dados da versão anterior (`appmae.v1`) são migrados.
 - A foto do boletim é guardada, mas não é lida automaticamente. As notas são digitadas.
-- A conversa de WhatsApp é simulada, com regras simples sobre os dados do app. Não usa IA nem a API do WhatsApp.
+- A conversa de WhatsApp é simulada, com regras simples. Não usa IA nem a API do WhatsApp. Toda mensagem diz de qual filho é.
+- Não existe: peso e altura, lembretes reais.
 
 ## Rodar localmente
 
@@ -50,12 +56,10 @@ O endereço sai como `https://app-mae.pages.dev` (ou parecido). Depois abra no c
 
 ```
 src/
-  app/          rotas: / (início), escola, saude, whatsapp, novo-filho; layout e globals.css
-  components/   Shell (menu e boas-vindas), Ui (folhas, aviso, foto), sheets, parts, Icons
-  lib/          store (localStorage), grades (notas), dates, chat (conversa simulada), photo
+  app/          rotas: / (Hoje), filho, eu, whatsapp, novo-filho; layout e globals.css
+  components/   Shell (menu), Onboarding (cadastro), Ui (folhas, aviso, foto), sheets, parts, Icons
+  lib/          store (localStorage), phases (fases), grades (notas), dates, chat (conversa simulada), view, photo
 public/         manifest, service worker, ícones, _headers, robots.txt
 legacy/         versão anterior em HTML e JS puro, só como referência (pode apagar)
 next.config.mjs, wrangler.toml
 ```
-
-Observação: o endereço da Escola agora é `/escola/`, e não mais `/#/escola`. A chave dos dados no navegador continua `appmae.v1`, então quem já testou mantém os dados.

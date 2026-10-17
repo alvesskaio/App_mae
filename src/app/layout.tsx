@@ -5,7 +5,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'App Mãe',
-  description: 'Escola, saúde e compromissos dos filhos num lugar só. Versão de teste.',
+  description: 'Saúde, escola e compromissos dos filhos num lugar só, da gestação até a escola. Versão de teste.',
   robots: { index: false, follow: false },
   manifest: '/manifest.webmanifest',
   icons: {
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Jost:wght@400;500;600&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" />
       </head>
       <body>
         <Shell>{children}</Shell>

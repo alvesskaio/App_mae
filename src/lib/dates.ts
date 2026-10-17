@@ -64,7 +64,8 @@ export function ageLabel(birthISO: string): string {
   let months = (now.getFullYear() - b.getFullYear()) * 12 + (now.getMonth() - b.getMonth());
   if (now.getDate() < b.getDate()) months -= 1;
   if (months < 0) return '';
-  if (months < 24) return months <= 1 ? `${months} mês` : `${months} meses`;
+  if (months < 1) return 'recém-nascido';
+  if (months < 24) return months === 1 ? '1 mês' : `${months} meses`;
   return `${Math.floor(months / 12)} anos`;
 }
 
@@ -92,4 +93,22 @@ export function reminderLine(ev: { date: string }): string {
       : 'Aviso no WhatsApp enviado hoje, às 18h.';
   }
   return `Aviso no WhatsApp ${weekday(addDays(ev.date, -1))}, às 18h.`;
+}
+
+export const dow = (iso: string) => parseISO(iso).getDay();
+
+// "na terça", "no sábado"
+export function onDay(iso: string): string {
+  const d = dow(iso);
+  return `${d === 0 || d === 6 ? 'no' : 'na'} ${DIAS[d]}`;
+}
+
+// Meses completos entre a data de nascimento e hoje. Sem data ou data futura = null.
+export function ageMonths(birthISO: string): number | null {
+  if (!birthISO) return null;
+  const b = parseISO(birthISO);
+  const now = new Date();
+  let months = (now.getFullYear() - b.getFullYear()) * 12 + (now.getMonth() - b.getMonth());
+  if (now.getDate() < b.getDate()) months -= 1;
+  return months < 0 ? null : months;
 }
