@@ -2,13 +2,20 @@
 // Conversa simulada de WhatsApp. O #app ganha a classe "chat" no Shell.
 import { useEffect, useRef, type FormEvent } from 'react';
 import Link from 'next/link';
-import { ask, bootChat, QUICK, sendPhoto, useChat, isTyping } from '@/lib/chat';
+import { ask, bootChat, boletimTarget, isTyping, quickQuestions, sendPhoto, useChat, type Msg } from '@/lib/chat';
+import { useAppState } from '@/lib/store';
+import { PHASES, phaseOf } from '@/lib/phases';
 import { Icons } from '@/components/Icons';
+import { kidOf, pal, useGotoKid } from '@/components/parts';
+import { useSheets } from '@/components/sheets';
 import { useUi } from '@/components/Ui';
 
 export default function Whatsapp() {
+  const s = useAppState();
   const { msgs, typing } = useChat();
   const { pickPhoto, toast } = useUi();
+  const sheets = useSheets();
+  const goto = useGotoKid();
   const list = useRef<HTMLDivElement>(null);
 
   useEffect(() => { bootChat(); }, []);
@@ -27,9 +34,19 @@ export default function Whatsapp() {
 
   async function photo() {
     if (isTyping()) return;
+    const target = boletimTarget();
+    if (!target) { toast('O boletim vale a partir dos 6 anos. Nenhum filho está nessa fase.'); return; }
     const p = await pickPhoto();
     if (!p) return;
-    if (!sendPhoto(p).saved) toast('Sem espaço para guardar a foto neste navegador.');
+    if (!sendPhoto(p, target).saved) toast('Sem espaço para guardar a foto neste navegador.');
+  }
+
+  function linkOf(m: Msg) {
+    const l = m.link;
+    if (!l) return null;
+    if (l.href) return <div className="qr"><Link className="chip line" href={l.href}>{l.label}</Link></div>;
+    const onClick = l.kid ? () => goto(l.kid!.id, l.kid!.tab) : sheets.addMenu;
+    return <div className="qr"><button type="button" className="chip line" onClick={onClick}>{l.label}</button></div>;
   }
 
   return (
@@ -41,21 +58,31 @@ export default function Whatsapp() {
       </div>
       <div className="chat-list" ref={list} role="log" aria-live="polite" aria-label="Conversa">
         <div className="day">Hoje</div>
-        {msgs.map((m, i) => (
-          <div key={i} style={{ display: 'contents' }}>
-            <div className={`msg ${m.from}`}>
-              {m.img && /* eslint-disable-next-line @next/next/no-img-element */ <img className="chat-img" src={m.img} alt="Foto enviada" />}
-              {m.text && <span>{m.text}</span>}
-              <time>{m.time}</time>
+        {msgs.map((m, i) => {
+          const k = m.child ? kidOf(s, m.child) : null;
+          return (
+            <div key={i} style={{ display: 'contents' }}>
+              <div className={`msg ${m.from}`}>
+                {k && <span className={`tag ${pal(k)}`}>{k.name} · {PHASES[phaseOf(k)].label}</span>}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {m.img && <img className="chat-img" src={m.img} alt="Foto enviada" />}
+                {m.text && <span className="txt">{m.text}</span>}
+                <time>{m.time}</time>
+              </div>
+              {linkOf(m)}
+              {m.chips && (
+                <div className="qr">
+                  {m.chips.map((n) => <button key={n} type="button" className="chip line" onClick={() => ask(`O que tem esta semana para ${n}?`)}>{n}</button>)}
+                </div>
+              )}
             </div>
-            {m.link && <div className="qr"><Link className="chip line" href={m.link.href}>{m.link.label}</Link></div>}
-          </div>
-        ))}
+          );
+        })}
         {typing ? (
           <div className="msg bot typing" aria-label="digitando">digitando…</div>
         ) : (
           <div className="qr">
-            {QUICK.map((q) => <button key={q} type="button" className="chip line" onClick={() => ask(q)}>{q}</button>)}
+            {quickQuestions(s).map((q) => <button key={q} type="button" className="chip line" onClick={() => ask(q)}>{q}</button>)}
           </div>
         )}
       </div>

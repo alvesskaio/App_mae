@@ -21,5 +21,15 @@ export const Icons = {
   chevron: make(<path d="M9 5l7 7-7 7" />),
   back: make(<path d="M15 5l-7 7 7 7" />, 2),
   close: make(<path d="M6 6l12 12M18 6 6 18" />, 2),
+  user: make(<><circle cx="12" cy="8.5" r="3.5" /><path d="M5 20c.8-3.6 3.8-5.5 7-5.5s6.2 1.9 7 5.5" /></>),
+  down: make(<path d="M6 9l6 6 6-6" />, 2),
   send: make(<path d="M5 12h14M13 6l6 6-6 6" />, 2),
 };
+
+export function MoreIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" />
+    </svg>
+  );
+}
