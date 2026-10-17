@@ -1,13 +1,14 @@
 // Service worker: abre o app sem internet. Rede primeiro para o próprio site, cache como reserva.
-const CACHE = 'appmae-v1';
-const CORE = [
-  './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icons/icon.svg',
-  'js/main.js', 'js/store.js', 'js/screens.js', 'js/sheets.js', 'js/chat.js',
-  'js/ui.js', 'js/icons.js', 'js/dates.js', 'js/grades.js',
-];
+// Os arquivos do Next têm nome com hash, então são guardados conforme o uso, não numa lista fixa.
+const CACHE = 'appmae-v2';
+const CORE = ['/', '/escola/', '/saude/', '/whatsapp/', '/novo-filho/', '/manifest.webmanifest', '/icons/icon.svg'];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then((c) => Promise.allSettled(CORE.map((u) => c.add(u))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
@@ -30,7 +31,7 @@ self.addEventListener('fetch', (e) => {
           if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
           return res;
         })
-        .catch(() => caches.match(req).then((hit) => hit || caches.match('index.html')))
+        .catch(() => caches.match(req).then((hit) => hit || (req.mode === 'navigate' ? caches.match('/') : undefined)))
     );
     return;
   }

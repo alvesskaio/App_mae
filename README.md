@@ -1,6 +1,6 @@
 # App Mãe (protótipo funcional)
 
-Site estático instalável (PWA) para testar o design e o fluxo: cadastrar filho, guardar consultas e exames, digitar notas e ver quanto falta em cada matéria, além de uma conversa simulada de WhatsApp.
+Site instalável (PWA) feito em Next.js (App Router, TypeScript) e exportado como site estático, para testar o design e o fluxo: cadastrar filho, guardar consultas e exames, digitar notas e ver quanto falta em cada matéria, além de uma conversa simulada de WhatsApp.
 
 ## O que funciona e o que não funciona
 
@@ -12,21 +12,31 @@ Site estático instalável (PWA) para testar o design e o fluxo: cadastrar filho
 ## Rodar localmente
 
 ```
-npx wrangler pages dev ./public
+npm install
+npm run dev
 ```
 
-Ou, sem nada instalado: `python3 -m http.server 8080 --directory public` e abrir `http://localhost:8080`.
+Abra `http://localhost:3000`. O service worker (modo offline) só roda na versão publicada ou exportada, não no `dev`.
 
-## Publicar na Cloudflare Pages
+Para testar a versão exportada:
+
+```
+npm run build
+npx serve out
+```
+
+## Publicar na Cloudflare (Workers, arquivos estáticos)
+
+O `next build` gera o site estático na pasta `out/` (`output: 'export'`) e o `wrangler.toml` publica essa pasta.
 
 Opção 1, pela linha de comando:
 
 ```
 npx wrangler login
-npx wrangler pages deploy ./public --project-name app-mae
+npm run deploy
 ```
 
-Opção 2, pelo painel: Workers & Pages, Create, Pages, Upload assets, e enviar a pasta `public/`.
+Opção 2, pelo painel: conecte o repositório e use o comando de build `npm run build` com a pasta de saída `out`. Ou envie a pasta `out/` em Workers & Pages, Create, Pages, Upload assets.
 
 O endereço sai como `https://app-mae.pages.dev` (ou parecido). Depois abra no celular e use "Adicionar à tela inicial".
 
@@ -39,9 +49,13 @@ O endereço sai como `https://app-mae.pages.dev` (ou parecido). Depois abra no c
 ## Estrutura
 
 ```
-public/        pasta publicada
-  index.html, css/app.css, sw.js, manifest.webmanifest, _headers, robots.txt
-  js/          módulos ES (store, telas, folhas, conversa, notas, datas)
-  icons/
-wrangler.toml
+src/
+  app/          rotas: / (início), escola, saude, whatsapp, novo-filho; layout e globals.css
+  components/   Shell (menu e boas-vindas), Ui (folhas, aviso, foto), sheets, parts, Icons
+  lib/          store (localStorage), grades (notas), dates, chat (conversa simulada), photo
+public/         manifest, service worker, ícones, _headers, robots.txt
+legacy/         versão anterior em HTML e JS puro, só como referência (pode apagar)
+next.config.mjs, wrangler.toml
 ```
+
+Observação: o endereço da Escola agora é `/escola/`, e não mais `/#/escola`. A chave dos dados no navegador continua `appmae.v1`, então quem já testou mantém os dados.

@@ -1,10 +1,24 @@
 {
   "name": "app-mae",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Protótipo funcional do App Mãe (PWA estático, dados no aparelho).",
+  "description": "Protótipo funcional do App Mãe (Next.js exportado como site estático, dados no aparelho).",
   "scripts": {
-    "dev": "npx wrangler pages dev ./public",
-    "deploy": "npx wrangler pages deploy ./public --project-name app-mae"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "npx serve out",
+    "typecheck": "tsc --noEmit",
+    "deploy": "next build && npx wrangler deploy"
+  },
+  "dependencies": {
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.7.0"
   }
 }
