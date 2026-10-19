@@ -379,3 +379,10 @@ button.link.pad { display: block; margin-top: 10px; text-align: left; }
 .vaccard b { display: block; font-size: 17px; font-weight: 700; }
 .vaccard .vnames { display: block; margin-top: 1px; font-size: 14px; }
 .vaccard .linkish { color: var(--peach-ink-2); }
+
+/* Lembretes da mãe: círculo para marcar como feito + texto que abre a edição */
+.remrow { gap: 6px; padding-left: 6px; }
+.remcheck { position: relative; flex-shrink: 0; width: 44px; height: 44px; border: 0; background: transparent; }
+.remcheck::before { content: ''; position: absolute; inset: 10px; border: 2px solid var(--berry); border-radius: 50%; }
+.s.late { color: var(--rasp); font-weight: 600; }
+.remrow .rowmain { min-height: 44px; }

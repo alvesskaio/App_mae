@@ -9,6 +9,7 @@ import {
 import * as D from '@/lib/dates';
 import { BIMESTRES, fmt, parseNote, type Note } from '@/lib/grades';
 import { phaseLine, weeksOf } from '@/lib/phases';
+import { ReminderForm } from './RemindersSheets';
 import { PrenatalForm, PrenatalList } from './PrenatalSheets';
 import { EXAMS } from '@/lib/prenatal';
 import { BirthDataForm, CardView, HealthForm, MeasureForm } from './CardSheets';
@@ -1063,6 +1064,7 @@ export function useSheets() {
       if (m) openSheet(m.name, <MedView id={id} />);
     },
     ...nav,
+    reminderForm: (id?: string) => openSheet(id ? 'Editar lembrete' : 'Novo lembrete', <ReminderForm id={id} />),
     prenatalList: prenatalNav.prenatalList,
     vaccineList: (childId: string) => {
       const k = getState().children.find((c) => c.id === childId);

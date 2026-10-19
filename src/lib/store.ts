@@ -28,6 +28,12 @@ export interface VaccineShot { id: string; childId: string; doseId: string | nul
 export interface Measure { id: string; childId: string; date: string; weightKg: number | null; headCm: number | null; heightCm?: number | null }
 // Exame do pré-natal marcado como feito. examId liga ao catálogo em src/data/exames-prenatal.json.
 export interface PrenatalDone { id: string; childId: string; examId: string; date: string; note: string; photo: string | null }
+// Lembrete livre da mãe (não pertence a nenhum filho).
+// Com repetição, `date` é a próxima vez; `day` guarda o dia do mês de origem; `until` é a data final (vazia = sem fim).
+export interface Reminder {
+  id: string; text: string; date: string; time: string; done: boolean;
+  repeat?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'; weekdays?: number[]; day?: number; until?: string;
+}
 export interface Boletim { photo: string; at: string }
 
 export type OnbStep = 'welcome' | 'consent' | 'e1' | 'e2' | 'e3';
@@ -57,6 +63,7 @@ export interface AppState {
   vaccines: VaccineShot[];
   measures: Measure[];
   prenatal: PrenatalDone[];
+  reminders: Reminder[];
   boletim: Record<string, Boletim>;
 }
 
@@ -77,7 +84,7 @@ function empty(): AppState {
   return {
     v: 2, onboarded: false, onb: emptyOnb(), consent: emptyConsent(), motherName: '', profile: { experienced: null }, media: 6,
     routine: emptyRoutine(), currentChildId: null,
-    children: [], subjects: [], events: [], docs: [], medicines: [], vaccines: [], measures: [], prenatal: [], boletim: {},
+    children: [], subjects: [], events: [], docs: [], medicines: [], vaccines: [], measures: [], prenatal: [], reminders: [], boletim: {},
   };
 }
 
