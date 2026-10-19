@@ -4,6 +4,7 @@ import { currentChild, useAppState, type AppState, type Child } from '@/lib/stor
 import * as D from '@/lib/dates';
 import { fmt, notesText, sortSubjects, BIMESTRES, type Ranked } from '@/lib/grades';
 import { PRESCRIPTION_NOTICE, mlLabel, statusOf } from '@/lib/medicines';
+import { monthLabel, vaccinesOf } from '@/lib/vaccines';
 import { PHASES, TIPS, TIPS_TITLE, overdue, phaseLine, phaseOf, weeksOf, type Phase } from '@/lib/phases';
 import { setFilhoTab, useFilhoTab } from '@/lib/view';
 import type { Subject } from '@/lib/store';
@@ -61,6 +62,34 @@ function Medicines({ s, c, sheets }: { s: AppState; c: Child; sheets: Sheets }) 
   );
 }
 
+// Resumo curto: o que está para tomar chama atenção; a lista completa e a caderneta ficam numa folha.
+function Vaccines({ s, c, sheets }: { s: AppState; c: Child; sheets: Sheets }) {
+  const v = vaccinesOf(c, s.vaccines);
+  const names = [...new Set(v.pending.map((d) => d.vacina.split(' (')[0]))];
+  const open = () => sheets.vaccineList(c.id);
+  return (
+    <>
+      <h2 className="h2 sp">Vacinas</h2>
+      {v.pending.length > 0 ? (
+        <button type="button" className="vaccard" onClick={open}>
+          <span className="vcount">{v.pending.length}</span>
+          <span className="grow">
+            <b>{v.pending.length === 1 ? 'vacina para tomar' : 'vacinas para tomar'}</b>
+            <span className="vnames">{names.slice(0, 2).join(', ')}{names.length > 2 ? ` e mais ${names.length - 2}` : ''}</span>
+          </span>
+          <span className="linkish">Ver</span>
+        </button>
+      ) : (
+        <button type="button" className="row flatrow" onClick={open}>
+          <div className="grow"><p className="t">Vacinas em dia</p>
+            <p className="s">{v.next.length ? `Próxima: ${monthLabel(v.next[0].mes)}` : `${v.applied.length} na caderneta`}</p></div>
+          <span className="linkish">Caderneta</span>
+        </button>
+      )}
+    </>
+  );
+}
+
 function Tips({ ph }: { ph: Phase }) {
   return (
     <div className="note-lilac big">
@@ -114,6 +143,7 @@ function Saude({ s, c, ph, sheets }: { s: AppState; c: Child; ph: Phase; sheets:
       {rest.length
         ? <div className="list">{rest.map((e) => <EventRow key={e.id} s={s} e={e} onOpen={sheets.eventView} onNote={sheets.noteForm} />)}</div>
         : <p className="muted pad">{next.length ? 'Nenhum outro compromisso de saúde.' : 'Os compromissos de saúde aparecem aqui.'}</p>}
+      {c.kind === 'born' && <Vaccines s={s} c={c} sheets={sheets} />}
       {c.kind === 'born' && <Medicines s={s} c={c} sheets={sheets} />}
       <Docs s={s} c={c} sheets={sheets} />
       <Tips ph={ph} />

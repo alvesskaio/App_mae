@@ -1,0 +1,24 @@
+{
+  "_aviso": "RASCUNHO para validação da pediatra. Não é o calendário oficial. Edite só este arquivo: cada item é uma dose. 'mes' é a idade, em meses completos, em que a dose deve ser tomada (0 = ao nascer).",
+  "versao": "rascunho-1",
+  "doses": [
+    { "id": "bcg-unica", "vacina": "BCG", "dose": "Dose única", "mes": 0 },
+    { "id": "hepb-1", "vacina": "Hepatite B", "dose": "1ª dose", "mes": 0 },
+    { "id": "penta-1", "vacina": "Pentavalente (DTP, Hib e Hepatite B)", "dose": "1ª dose", "mes": 2 },
+    { "id": "vip-1", "vacina": "Poliomielite inativada (VIP)", "dose": "1ª dose", "mes": 2 },
+    { "id": "pneumo-1", "vacina": "Pneumocócica 10-valente", "dose": "1ª dose", "mes": 2 },
+    { "id": "rota-1", "vacina": "Rotavírus", "dose": "1ª dose", "mes": 2 },
+    { "id": "meningoc-1", "vacina": "Meningocócica C", "dose": "1ª dose", "mes": 3 },
+    { "id": "penta-2", "vacina": "Pentavalente (DTP, Hib e Hepatite B)", "dose": "2ª dose", "mes": 4 },
+    { "id": "vip-2", "vacina": "Poliomielite inativada (VIP)", "dose": "2ª dose", "mes": 4 },
+    { "id": "pneumo-2", "vacina": "Pneumocócica 10-valente", "dose": "2ª dose", "mes": 4 },
+    { "id": "rota-2", "vacina": "Rotavírus", "dose": "2ª dose", "mes": 4 },
+    { "id": "meningoc-2", "vacina": "Meningocócica C", "dose": "2ª dose", "mes": 5 },
+    { "id": "penta-3", "vacina": "Pentavalente (DTP, Hib e Hepatite B)", "dose": "3ª dose", "mes": 6 },
+    { "id": "vip-3", "vacina": "Poliomielite inativada (VIP)", "dose": "3ª dose", "mes": 6 },
+    { "id": "febre-amarela-1", "vacina": "Febre amarela", "dose": "Dose inicial", "mes": 9 },
+    { "id": "triplice-1", "vacina": "Tríplice viral (sarampo, caxumba e rubéola)", "dose": "1ª dose", "mes": 12 },
+    { "id": "pneumo-ref", "vacina": "Pneumocócica 10-valente", "dose": "Reforço", "mes": 12 },
+    { "id": "meningoc-ref", "vacina": "Meningocócica C", "dose": "Reforço", "mes": 12 }
+  ]
+}
