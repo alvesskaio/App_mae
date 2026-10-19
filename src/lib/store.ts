@@ -17,6 +17,8 @@ export interface AppEvent { id: string; childId: string | null; title: string; d
 export interface Doc { id: string; childId: string; title: string; date: string; photo: string | null }
 // Remédio prescrito pelo pediatra. O app só registra: não calcula nem sugere dose.
 export interface Medicine { id: string; childId: string; name: string; doseMl: number; time: string; start: string; days: number }
+// Dose aplicada (caderneta). doseId liga ao calendário em src/data/vacinas.json; fica null nas vacinas fora dele.
+export interface VaccineShot { id: string; childId: string; doseId: string | null; name: string; date: string }
 export interface Boletim { photo: string; at: string }
 
 export type OnbStep = 'welcome' | 'consent' | 'e1' | 'e2' | 'e3';
@@ -43,6 +45,7 @@ export interface AppState {
   events: AppEvent[];
   docs: Doc[];
   medicines: Medicine[];
+  vaccines: VaccineShot[];
   boletim: Record<string, Boletim>;
 }
 
@@ -63,7 +66,7 @@ function empty(): AppState {
   return {
     v: 2, onboarded: false, onb: emptyOnb(), consent: emptyConsent(), motherName: '', profile: { experienced: null }, media: 6,
     routine: emptyRoutine(), currentChildId: null,
-    children: [], subjects: [], events: [], docs: [], medicines: [], boletim: {},
+    children: [], subjects: [], events: [], docs: [], medicines: [], vaccines: [], boletim: {},
   };
 }
 
@@ -172,6 +175,7 @@ export function removeChild(st: AppState, id: string) {
   st.events = st.events.filter((x) => x.childId !== id);
   st.docs = st.docs.filter((x) => x.childId !== id);
   st.medicines = st.medicines.filter((x) => x.childId !== id);
+  st.vaccines = st.vaccines.filter((x) => x.childId !== id);
   delete st.boletim[id];
   if (st.currentChildId === id) {
     const next = activeChildren(st)[0];

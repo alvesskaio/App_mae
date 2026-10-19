@@ -9,6 +9,7 @@ import {
 import * as D from '@/lib/dates';
 import { BIMESTRES, fmt, parseNote, type Note } from '@/lib/grades';
 import { phaseLine, weeksOf } from '@/lib/phases';
+import { DOSES, doseLabel, monthLabel, vaccinesOf } from '@/lib/vaccines';
 import { PRESCRIPTION_NOTICE, dayOf, endOf, mlLabel, parseMl, statusOf } from '@/lib/medicines';
 import { setFilhoTab } from '@/lib/view';
 import { shrink } from '@/lib/photo';
@@ -544,6 +545,104 @@ function MedView({ id }: { id: string }) {
   );
 }
 
+/* ---------- Caderneta de vacinas ---------- */
+// Com doseId: dose do calendário. Sem doseId: vacina fora do calendário, com nome digitado.
+function VaccineForm({ childId, doseId }: { childId: string; doseId: string | null }) {
+  const { closeSheet, toast } = useUi();
+  const kid = useAppState().children.find((c) => c.id === childId);
+  const dose = doseId ? DOSES.find((d) => d.id === doseId) : undefined;
+  const [errs, setErrs] = useState<Errs>({});
+
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const name = dose ? doseLabel(dose) : str(fd, 'name').trim();
+    const date = str(fd, 'date');
+    const next: Errs = {};
+    if (!name) next.name = 'Digite o nome da vacina.';
+    if (!ISO.test(date) || date > D.todayISO()) next.date = 'Escolha uma data que já passou ou hoje.';
+    setErrs(next);
+    if (Object.keys(next).length) return;
+    update((st) => { st.vaccines.push({ id: uid(), childId, doseId: dose ? dose.id : null, name, date }); });
+    closeSheet();
+    toast('Vacina registrada na caderneta.');
+  }
+
+  return (
+    <form noValidate onSubmit={submit}>
+      <p className="detail muted">Vacina de {kid ? kid.name : 'seu filho'}.</p>
+      {dose
+        ? <p className="detail">{doseLabel(dose)}</p>
+        : <div className="field"><label htmlFor="v-name">Nome da vacina e dose</label>
+            <input className="inp" id="v-name" name="name" maxLength={80} autoComplete="off" placeholder="Ex.: Hepatite A, 1ª dose" aria-invalid={invalid(errs.name)} /><Err msg={errs.name} /></div>}
+      <div className="field"><label htmlFor="v-date">Data em que foi aplicada</label>
+        <input className="inp" id="v-date" name="date" type="date" max={D.todayISO()} defaultValue={D.todayISO()} aria-invalid={invalid(errs.date)} /><Err msg={errs.date} /></div>
+      <button className="btn block big" type="submit" style={{ marginTop: 14 }}>Salvar na caderneta</button>
+    </form>
+  );
+}
+
+// Folha com tudo: o que falta, as próximas e a caderneta.
+function VaccineList({ childId }: { childId: string }) {
+  const s = useAppState();
+  const sheets = useSheets();
+  const kid = s.children.find((c) => c.id === childId);
+  if (!kid) return null;
+  const v = vaccinesOf(kid, s.vaccines);
+  return (
+    <>
+      <p className="hint">Calendário em rascunho, a validar com a pediatra. Confira sempre a caderneta e o posto de saúde.</p>
+      {v.pending.length > 0 && (
+        <>
+          <h3 className="h3 tight">Para tomar</h3>
+          <div className="list">
+            {v.pending.map((d) => (
+              <button type="button" className="row flatrow" key={d.id} onClick={() => sheets.vaccineForm(childId, d.id)}>
+                <div className="grow"><p className="t">{d.vacina}</p><p className="s">{d.dose}, {monthLabel(d.mes)}</p></div>
+                <span className="linkish">Aplicada</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {v.next.length > 0 && <p className="hint">Próximas, {monthLabel(v.next[0].mes)}: {v.next.map(doseLabel).join('; ')}.</p>}
+      {v.applied.length > 0 && (
+        <>
+          <h3 className="h3 tight">Caderneta</h3>
+          <div className="list">
+            {v.applied.map((x) => (
+              <button type="button" className="row flatrow" key={x.id} onClick={() => sheets.vaccineView(x.id)}>
+                <div className="grow"><p className="t">{x.name}</p><p className="s">Aplicada em {D.brDate(x.date)}</p></div>
+                <span className="muted"><Icons.chevron size={20} /></span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <button type="button" className="btn line block" style={{ marginTop: 14 }} onClick={() => sheets.vaccineForm(childId, null)}><Icons.plus size={18} />Registrar outra vacina</button>
+    </>
+  );
+}
+
+function VaccineView({ id }: { id: string }) {
+  const { closeSheet, toast } = useUi();
+  const s = useAppState();
+  const v = s.vaccines.find((x) => x.id === id);
+  if (!v) return null;
+  const kid = s.children.find((c) => c.id === v.childId);
+  return (
+    <>
+      <p className="detail">Aplicada em {D.brDate(v.date)}</p>
+      <p className="detail muted">Para {kid ? kid.name : 'seu filho'}.</p>
+      <ArmButton className="btn line block" style={{ marginTop: 20 }} onConfirm={() => {
+        update((st) => { st.vaccines = st.vaccines.filter((x) => x.id !== id); });
+        closeSheet();
+        toast('Removida da caderneta.');
+      }}>Remover da caderneta</ArmButton>
+    </>
+  );
+}
+
 /* ---------- Documentos de saúde ---------- */
 function DocForm() {
   const { closeSheet, toast } = useUi();
@@ -937,6 +1036,16 @@ export function useSheets() {
     medView: (id: string) => {
       const m = getState().medicines.find((x) => x.id === id);
       if (m) openSheet(m.name, <MedView id={id} />);
+    },
+    vaccineList: (childId: string) => {
+      const k = getState().children.find((c) => c.id === childId);
+      if (k) openSheet(`Vacinas de ${k.name}`, <VaccineList childId={childId} />);
+    },
+    vaccineForm: (childId: string, doseId: string | null) =>
+      openSheet(doseId ? 'Vacina aplicada' : 'Outra vacina', <VaccineForm childId={childId} doseId={doseId} />),
+    vaccineView: (id: string) => {
+      const v = getState().vaccines.find((x) => x.id === id);
+      if (v) openSheet(v.name, <VaccineView id={id} />);
     },
     routineForm: () => openSheet('Minha rotina', <RoutineForm />),
     consentView: () => openSheet('Seus consentimentos', <ConsentView />),

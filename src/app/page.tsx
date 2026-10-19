@@ -4,6 +4,7 @@ import { activeChildren, useAppState, visibleEvents, type AppState } from '@/lib
 import * as D from '@/lib/dates';
 import { fmt, worst } from '@/lib/grades';
 import { overdue, phaseLine } from '@/lib/phases';
+import { vaccinesOf } from '@/lib/vaccines';
 import { PRESCRIPTION_NOTICE, dayOf, mlLabel, statusOf } from '@/lib/medicines';
 import { Icons } from '@/components/Icons';
 import { EventRow, first, initialOf, kidOf, pal, subjectsOf, upcoming, useGotoKid, whenLine } from '@/components/parts';
@@ -99,7 +100,9 @@ export default function Hoje() {
         {kids.map((k) => {
           const e = all.find((x) => x.childId === k.id);
           const n = meds.filter((m) => m.childId === k.id).length;
-          const line = [e ? `${D.relLabel(e.date)}: ${e.title}` : 'Nada marcado', n ? `${n} ${n === 1 ? 'remédio' : 'remédios'} em andamento` : ''].filter(Boolean).join('. ');
+          const vac = k.kind === 'born' ? vaccinesOf(k, s.vaccines) : null;
+          const vn = vac && vac.remind ? vac.pending.length : 0;
+          const line = [e ? `${D.relLabel(e.date)}: ${e.title}` : 'Nada marcado', n ? `${n} ${n === 1 ? 'remédio' : 'remédios'} em andamento` : '', vn ? `${vn} ${vn === 1 ? 'vacina para tomar' : 'vacinas para tomar'}` : ''].filter(Boolean).join('. ');
           return (
             <button key={k.id} type="button" className={`row sel ${pal(k)}`} onClick={() => goto(k.id)}>
               <div className="tile sq"><b>{k.name.charAt(0).toUpperCase()}</b></div>
