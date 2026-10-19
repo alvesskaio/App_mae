@@ -1,19 +1,41 @@
-# App Mãe (protótipo funcional)
+# Owl Day (protótipo funcional)
 
-Site instalável (PWA) feito em Next.js (App Router, TypeScript) e exportado como site estático, para testar o design e o fluxo de um app para mães: da gestação até a escola, com um perfil por filho, e uma conversa simulada de WhatsApp. Fonte: Open Sans (títulos em ExtraBold).
+Site instalável (PWA) feito em Next.js (App Router, TypeScript) e exportado como site estático. É um app para mães, da gestação até os 14 anos do filho, com um perfil por filho e uma conversa simulada de WhatsApp. Fonte: Open Sans (títulos em ExtraBold). A logo é a corujinha em `assets/brand/`.
 
 ## O que funciona e o que não funciona
 
-- Cadastro em 3 etapas, com o consentimento antes de qualquer pergunta de saúde: está grávida (data prevista opcional), filhos, rotina. Consentimento de estatísticas é separado e opcional.
-- Fases por idade, sem escolha manual: gestação, primeiro ano, primeiros passos, pré-escola, escola. A mãe diz se está grávida e informa o nascimento de cada filho; a fase de cada perfil é calculada e muda sozinha. Notas e boletim só aparecem na fase escola.
-- Hoje junta os compromissos de todos os filhos, com o nome do filho em texto em cada linha. Seletor de filho em folha inferior.
-- Gestação: semanas calculadas pela data prevista, editar data e gêmeos, registrar nascimento (gêmeos viram dois perfis), encerrar acompanhamento (guardar escondido ou apagar). Filho encerrado some de Hoje, da conversa e dos lembretes.
-- Eu: rotina, silêncio, consentimentos, baixar dados (JSON), apagar tudo, dados de exemplo.
-- Compromissos, documentos (foto), matérias e notas com cálculo (média anual 6,0, 4 bimestres).
-- Dados ficam só no navegador (localStorage, chave `appmae.v2`). Não há servidor, conta ou login. Limpar os dados do site apaga tudo, e outro aparelho não vê nada. Dados da versão anterior (`appmae.v1`) são migrados.
-- A foto do boletim é guardada, mas não é lida automaticamente. As notas são digitadas.
-- A conversa de WhatsApp é simulada, com regras simples. Não usa IA nem a API do WhatsApp. Toda mensagem diz de qual filho é.
-- Não existe: peso e altura, lembretes reais.
+**Cadastro e fases**
+- Cadastro em 3 etapas, com o consentimento antes de qualquer pergunta de saúde: está grávida (data prevista opcional), filhos, rotina. O consentimento de estatísticas é separado e opcional.
+- A fase de cada filho é calculada pela data prevista ou de nascimento, nunca escolhida: gestação, primeiro ano, primeiros passos, pré-escola, escola. Gestação é tratada como "filho que ainda não nasceu".
+- Gestação: semanas pela data prevista, editar data e gêmeos, registrar nascimento (gêmeos viram dois perfis), encerrar o acompanhamento (guardar escondido ou apagar).
+
+**Início (panorama geral)**
+- Destaque do dia, lembretes da mãe, um card por filho (fase, próximo compromisso, remédios e vacinas pendentes), remédios de hoje, próximos compromissos e alertas (data prevista que passou, nota baixa, dia de folga para consulta).
+
+**Cada filho**
+- Saúde: compromissos, vacinas (card-resumo e caderneta), carteirinha (peso, altura, perímetro cefálico até 3 anos, nascimento, alergias e remédios contínuos), remédios prescritos (nome, dose em ml, horário e duração; o app não calcula nem sugere dose), documentos por foto e, na gestação, exames do pré-natal por semana.
+- Notas nos compromissos: texto livre "Como foi" e foto do resultado, em qualquer compromisso.
+- Escola (a partir da pré-escola): compromissos, boletim por foto e notas com cálculo (média anual 6,0, 4 bimestres).
+
+**Eu**
+- Perfil, rotina, WhatsApp (número, silêncio noturno e preferência por tipo de aviso), privacidade e dados (consentimento, estatísticas anônimas, baixar os dados em JSON) e apagar a conta.
+
+**Dados**
+- Tudo fica só no navegador (localStorage, chave `appmae.v2`; o nome da chave foi mantido para não perder dados já salvos). Não há servidor, conta ou login. Limpar os dados do site apaga tudo, e outro aparelho não vê nada. Dados da versão anterior (`appmae.v1`) são migrados.
+- A foto do boletim e dos resultados é guardada, mas não é lida automaticamente.
+
+**O que não existe**
+- Avisos reais por WhatsApp: a conversa é simulada, com regras simples, sem IA nem a API do WhatsApp. Os interruptores de aviso na aba Eu só guardam a preferência.
+- Curva de crescimento, cálculo de dose, calendário semanal e login.
+
+## Conteúdo médico a validar
+
+Dois calendários ficam em arquivos de dados, separados do código, e **são rascunhos que precisam de validação profissional antes de uso real**:
+
+- `src/data/vacinas.json`: doses por idade em meses, até 1 ano.
+- `src/data/exames-prenatal.json`: exames por semana de gestação. Lista as fontes consultadas e o que não foi confirmado.
+
+Para ajustar, edite só esses arquivos. Não mude o `id` de itens que já foram usados, senão os registros já feitos deixam de casar com o calendário.
 
 ## Rodar localmente
 
@@ -22,7 +44,7 @@ npm install
 npm run dev
 ```
 
-Abra `http://localhost:3000`. O service worker (modo offline) só roda na versão publicada ou exportada, não no `dev`.
+Abra `http://localhost:3000`. O service worker (modo offline) só roda na versão publicada ou exportada, não no `dev`. No `dev` aparece, na aba Eu, o link "Dados de exemplo (só desenvolvimento)", que não existe na versão publicada.
 
 Para testar a versão exportada:
 
@@ -31,9 +53,19 @@ npm run build
 npx serve out
 ```
 
+## Logo e ícones
+
+O original fica em `assets/brand/logo-original.png` e nunca é alterado. Para gerar de novo os ícones do PWA, o favicon, a versão sem fundo e o ícone de 1024 px para as lojas:
+
+```
+python assets/brand/generate-icons.py
+```
+
+Precisa de Python com Pillow. As saídas vão para `public/icons/`, `public/favicon.ico` e `assets/brand/store/`.
+
 ## Publicar na Cloudflare (Workers, arquivos estáticos)
 
-O `next build` gera o site estático na pasta `out/` (`output: 'export'`) e o `wrangler.toml` publica essa pasta.
+O `next build` gera o site estático na pasta `out/` (`output: 'export'`) e o `wrangler.toml` publica essa pasta. O nome do worker continua `app-mae`; mudar esse nome cria outro endereço.
 
 Opção 1, pela linha de comando:
 
@@ -55,11 +87,15 @@ O endereço sai como `https://app-mae.pages.dev` (ou parecido). Depois abra no c
 ## Estrutura
 
 ```
+assets/brand/   logo original, versão sem fundo, ícone das lojas e o script que gera os ícones
 src/
-  app/          rotas: / (Hoje), filho, eu, whatsapp, novo-filho; layout e globals.css
-  components/   Shell (menu), Onboarding (cadastro), Ui (folhas, aviso, foto), sheets, parts, Icons
-  lib/          store (localStorage), phases (fases), grades (notas), dates, chat (conversa simulada), view, photo
-public/         manifest, service worker, ícones, _headers, robots.txt
+  app/          rotas: / (início), filho, eu, whatsapp, novo-filho; layout e globals.css
+  components/   Shell (menu), Onboarding (cadastro), Ui (folhas, aviso, foto), sheets (formulários),
+                CardSheets, PrenatalSheets, RemindersSheets, parts, Icons
+  data/         calendários editáveis: vacinas.json e exames-prenatal.json
+  lib/          store (localStorage), phases (fases), grades (notas), dates, chat (conversa simulada),
+                medicines, vaccines, growth, prenatal, reminders, view, photo
+public/         manifest, service worker, ícones, favicon, _headers, robots.txt
 legacy/         versão anterior em HTML e JS puro, só como referência (pode apagar)
 next.config.mjs, wrangler.toml
 ```

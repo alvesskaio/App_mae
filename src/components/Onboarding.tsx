@@ -53,14 +53,16 @@ function Welcome() {
       <img className="mark" src="/icons/owl.png" alt="" width={96} height={96} />
       <h1 className="h1 xl">Bem-vinda</h1>
       <p className="lead">Organize saúde, escola e compromissos dos seus filhos num lugar só, da gestação até os 14 anos.</p>
-      <p className="lead small">Esta é uma versão de teste: o que você digitar fica salvo só neste aparelho.</p>
+      <p className="lead small">O que você digitar fica salvo só neste aparelho.</p>
       <form noValidate onSubmit={submit}>
         <div className="field">
           <label htmlFor="w-name">Como você se chama?</label>
           <input className="inp" id="w-name" name="name" autoComplete="given-name" maxLength={40} placeholder="Seu nome" defaultValue={name0} />
         </div>
         <button className="btn block" type="submit" name="intent" value="empty" style={{ marginTop: 20 }}>Começar</button>
-        <button className="btn line block" type="submit" name="intent" value="example" style={{ marginTop: 10 }}>Ver com dados de exemplo</button>
+        {process.env.NODE_ENV !== 'production' && (
+          <button className="btn line block" type="submit" name="intent" value="example" style={{ marginTop: 10 }}>Ver com dados de exemplo</button>
+        )}
       </form>
     </div>
   );
