@@ -6,7 +6,7 @@ import { fmt, notesText, sortSubjects, BIMESTRES, type Ranked } from '@/lib/grad
 import { PRESCRIPTION_NOTICE, mlLabel, statusOf } from '@/lib/medicines';
 import { measureLine, measuresOf } from '@/lib/growth';
 import { monthLabel, vaccinesOf } from '@/lib/vaccines';
-import { PHASES, TIPS, TIPS_TITLE, overdue, phaseLine, phaseOf, weeksOf, type Phase } from '@/lib/phases';
+import { PHASES, TIPS, TIPS_SAUDE, TIPS_SAUDE_TITLE, TIPS_TITLE, overdue, phaseLine, phaseOf, weeksOf, type Module, type Phase } from '@/lib/phases';
 import { setFilhoTab, useFilhoTab } from '@/lib/view';
 import type { Subject } from '@/lib/store';
 import { Icons, MoreIcon } from '@/components/Icons';
@@ -103,11 +103,13 @@ function CardSummary({ s, c, sheets }: { s: AppState; c: Child; sheets: Sheets }
   );
 }
 
-function Tips({ ph }: { ph: Phase }) {
+function Tips({ ph, mod }: { ph: Phase; mod: Module }) {
+  const title = mod === 'saude' ? TIPS_SAUDE_TITLE : TIPS_TITLE;
+  const tips = mod === 'saude' ? TIPS_SAUDE : TIPS;
   return (
     <div className="note-lilac big">
-      <p className="b">{TIPS_TITLE[ph]}</p>
-      <ul>{TIPS[ph].map((t) => <li key={t}>{t}</li>)}</ul>
+      <p className="b">{title[ph]}</p>
+      <ul>{tips[ph].map((x) => <li key={x}>{x}</li>)}</ul>
       <p className="small">Isto é organização. Para dúvidas de saúde, fale com {ph === 'gestacao' ? 'sua médica' : 'o médico'}.</p>
     </div>
   );
@@ -160,7 +162,7 @@ function Saude({ s, c, ph, sheets }: { s: AppState; c: Child; ph: Phase; sheets:
       {c.kind === 'born' && <CardSummary s={s} c={c} sheets={sheets} />}
       {c.kind === 'born' && <Medicines s={s} c={c} sheets={sheets} />}
       <Docs s={s} c={c} sheets={sheets} />
-      <Tips ph={ph} />
+      <Tips ph={ph} mod="saude" />
     </>
   );
 }
@@ -219,7 +221,7 @@ function Escola({ s, c, ph, sheets }: { s: AppState; c: Child; ph: Phase; sheets
           <p className="foot">Cálculo com média {fmt(s.media)} no ano ({fmt(s.media * BIMESTRES)} pontos nos {BIMESTRES} bimestres). A regra muda conforme a escola. <button type="button" className="link" onClick={sheets.routineForm}>Ajustar média</button></p>
         </>
       )}
-      <Tips ph={ph} />
+      <Tips ph={ph} mod="escola" />
     </>
   );
 }
