@@ -17,30 +17,45 @@ ICONS = ROOT / 'public' / 'icons'
 BG = (253, 244, 245)  # --ground do app (#FDF4F5), mesmo background_color do manifest
 
 
-def cut_background(im: Image.Image, tol: int = 14) -> Image.Image:
-    """Torna transparente o fundo claro ligado às bordas (a coruja tem contorno escuro, então não vaza)."""
+def cut_background(im: Image.Image, tol: int = 40) -> Image.Image:
+    """Torna transparente o fundo claro fora da coruja.
+
+    O rosto e as nervuras são claros como o fundo e encostam na borda do corpo, então um flood fill sozinho
+    vazaria para dentro. O corpo é um círculo: só vira transparente o fundo ligado às bordas que está fora dele."""
+    from collections import deque
+    from PIL import ImageDraw, ImageFilter
     rgb = im.convert('RGB')
     w, h = rgb.size
     px = rgb.load()
     ref = px[0, 0]
-    near = lambda p: all(abs(p[i] - ref[i]) <= tol for i in range(3))
+    far = lambda p: any(abs(p[i] - ref[i]) > tol for i in range(3))
+
+    # círculo do corpo: largura e base da coruja (as orelhas só aumentam o topo)
+    xs = [x for y in range(0, h, 2) for x in range(0, w, 2) if far(px[x, y])]
+    ys = [y for y in range(0, h, 2) for x in range(0, w, 2) if far(px[x, y])]
+    left, right, bottom = min(xs), max(xs), max(ys)
+    r = (right - left) / 2 + 3
+    cx, cy = (left + right) / 2, bottom - r + 3
+    body = Image.new('L', (w, h), 0)
+    ImageDraw.Draw(body).ellipse((cx - r, cy - r, cx + r, cy + r), fill=255)
+    bp = body.load()
+
     seen = bytearray(w * h)
     q = deque([(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)])
     while q:
         x, y = q.popleft()
-        if not (0 <= x < w and 0 <= y < h) or seen[y * w + x] or not near(px[x, y]):
+        if not (0 <= x < w and 0 <= y < h) or seen[y * w + x] or far(px[x, y]) or bp[x, y]:
             continue
         seen[y * w + x] = 1
         q.extend([(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)])
     out = rgb.convert('RGBA')
-    op = out.load()
+    alpha = Image.new('L', (w, h), 255)
+    ap = alpha.load()
     for y in range(h):
         for x in range(w):
             if seen[y * w + x]:
-                op[x, y] = (*ref, 0)
-    # suaviza o recorte para não ficar serrilhado
-    alpha = out.getchannel('A').filter(__import__('PIL.ImageFilter', fromlist=['x']).GaussianBlur(1.2))
-    out.putalpha(alpha)
+                ap[x, y] = 0
+    out.putalpha(alpha.filter(ImageFilter.GaussianBlur(1.2)))
     return out
 
 
