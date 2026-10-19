@@ -4,6 +4,7 @@ import { currentChild, useAppState, type AppState, type Child } from '@/lib/stor
 import * as D from '@/lib/dates';
 import { fmt, notesText, sortSubjects, BIMESTRES, type Ranked } from '@/lib/grades';
 import { PRESCRIPTION_NOTICE, mlLabel, statusOf } from '@/lib/medicines';
+import { measureLine, measuresOf } from '@/lib/growth';
 import { monthLabel, vaccinesOf } from '@/lib/vaccines';
 import { PHASES, TIPS, TIPS_TITLE, overdue, phaseLine, phaseOf, weeksOf, type Phase } from '@/lib/phases';
 import { setFilhoTab, useFilhoTab } from '@/lib/view';
@@ -90,6 +91,18 @@ function Vaccines({ s, c, sheets }: { s: AppState; c: Child; sheets: Sheets }) {
   );
 }
 
+// Resumo da carteirinha: a última medida; o resto abre numa folha.
+function CardSummary({ s, c, sheets }: { s: AppState; c: Child; sheets: Sheets }) {
+  const last = measuresOf(s.measures, c)[0];
+  return (
+    <button type="button" className="row flatrow" style={{ marginTop: 12 }} onClick={() => sheets.cardView(c.id)}>
+      <div className="grow"><p className="t">Carteirinha</p>
+        <p className="s">{last ? `${D.brDate(last.date)}: ${measureLine(last, c)}` : 'Peso, perímetro cefálico, Apgar e tipo sanguíneo'}</p></div>
+      <span className="linkish">Abrir</span>
+    </button>
+  );
+}
+
 function Tips({ ph }: { ph: Phase }) {
   return (
     <div className="note-lilac big">
@@ -144,6 +157,7 @@ function Saude({ s, c, ph, sheets }: { s: AppState; c: Child; ph: Phase; sheets:
         ? <div className="list">{rest.map((e) => <EventRow key={e.id} s={s} e={e} onOpen={sheets.eventView} onNote={sheets.noteForm} />)}</div>
         : <p className="muted pad">{next.length ? 'Nenhum outro compromisso de saúde.' : 'Os compromissos de saúde aparecem aqui.'}</p>}
       {c.kind === 'born' && <Vaccines s={s} c={c} sheets={sheets} />}
+      {c.kind === 'born' && <CardSummary s={s} c={c} sheets={sheets} />}
       {c.kind === 'born' && <Medicines s={s} c={c} sheets={sheets} />}
       <Docs s={s} c={c} sheets={sheets} />
       <Tips ph={ph} />
