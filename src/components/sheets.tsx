@@ -9,6 +9,7 @@ import {
 import * as D from '@/lib/dates';
 import { BIMESTRES, fmt, parseNote, type Note } from '@/lib/grades';
 import { phaseLine, weeksOf } from '@/lib/phases';
+import { PRESCRIPTION_NOTICE, dayOf, endOf, mlLabel, parseMl, statusOf } from '@/lib/medicines';
 import { setFilhoTab } from '@/lib/view';
 import { shrink } from '@/lib/photo';
 import { resetChat } from '@/lib/chat';
@@ -16,7 +17,7 @@ import { Icons } from './Icons';
 import { ArmButton, Err, invalid, useUi } from './Ui';
 import { first, pal, useGotoKid } from './parts';
 
-const CATS: [Category, string][] = [['saude', 'Saúde'], ['escola', 'Escola'], ['outro', 'Outro']];
+const CATS: [Category, string][] = [['saude', 'Saúde'], ['escola', 'Escola'], ['outro', 'Dia a dia']];
 const catLabel = (c: string) => (CATS.find((x) => x[0] === c) || CATS[2])[1];
 const nameOf = (id: string | null) => (getState().children.find((c) => c.id === id) || { name: 'Família toda' }).name;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -388,8 +389,55 @@ function EventForm({ category, childId, date }: { category?: Category; childId?:
   );
 }
 
+function NoteForm({ id }: { id: string }) {
+  const { closeSheet, toast } = useUi();
+  const e = useAppState().events.find((x) => x.id === id);
+  const [errs, setErrs] = useState<Errs>({});
+  if (!e) return null;
+
+  async function submit(ev: FormEvent<HTMLFormElement>) {
+    ev.preventDefault();
+    const fd = new FormData(ev.currentTarget);
+    const note = str(fd, 'note').trim();
+    let photo = fd.get('removePhoto') === 'on' ? null : (e!.notePhoto ?? null);
+    const file = fd.get('photo');
+    if (file instanceof File && file.size > 0) {
+      try { photo = await shrink(file); } catch { setErrs({ photo: 'Não consegui abrir essa foto.' }); return; }
+    }
+    const ok = update((st) => {
+      const t = st.events.find((x) => x.id === id);
+      if (t) { t.note = note; t.notePhoto = photo; }
+    });
+    if (!ok) {
+      update((st) => { const t = st.events.find((x) => x.id === id); if (t) t.notePhoto = e!.notePhoto ?? null; });
+      toast('A foto não coube neste navegador. A nota foi guardada sem ela.');
+    } else toast('Nota salva.');
+    closeSheet();
+  }
+
+  return (
+    <form noValidate onSubmit={submit}>
+      <p className="detail muted">{D.longDate(e.date)}, {nameOf(e.childId)}</p>
+      <div className="field first"><label htmlFor="n-note">Como foi</label>
+        <textarea className="inp" id="n-note" name="note" rows={5} maxLength={2000} defaultValue={e.note} placeholder="O que o médico disse, resultado, o que lembrar" style={{ height: 'auto', padding: '12px 16px' }} /></div>
+      <div className="field"><label htmlFor="n-photo">Foto do resultado <span className="muted">(opcional)</span></label>
+        {e.notePhoto && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="photo-prev" src={e.notePhoto} alt="Foto atual do resultado" style={{ marginBottom: 10 }} />
+            <label className="crow"><input type="checkbox" name="removePhoto" /><span>Remover esta foto</span></label>
+          </>
+        )}
+        <input className="inp file" id="n-photo" name="photo" type="file" accept="image/*" aria-invalid={invalid(errs.photo)} />
+        <Err msg={errs.photo} /></div>
+      <button className="btn block big" type="submit" style={{ marginTop: 14 }}>Salvar nota</button>
+    </form>
+  );
+}
+
 function EventView({ id }: { id: string }) {
   const { closeSheet, toast } = useUi();
+  const sheets = useSheets();
   const e = useAppState().events.find((x) => x.id === id);
   if (!e) return null;
   const reminder = D.reminderLine(e);
@@ -398,12 +446,100 @@ function EventView({ id }: { id: string }) {
       <p className="detail">{D.longDate(e.date)}{e.time ? ', às ' + D.timeLabel(e.time) : ''}</p>
       <p className="detail muted">{catLabel(e.category)}, {nameOf(e.childId)}</p>
       {reminder && <p className="detail muted">{reminder}</p>}
+      {(e.note || e.notePhoto) && (
+        <>
+          <h3 className="lbl top-gap">Como foi</h3>
+          {e.note && <p className="detail" style={{ whiteSpace: 'pre-wrap' }}>{e.note}</p>}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {e.notePhoto && <img className="photo-prev" src={e.notePhoto} alt={`Foto do resultado: ${e.title}`} />}
+        </>
+      )}
+      <button type="button" className="btn block" style={{ marginTop: 16 }} onClick={() => sheets.noteForm(id)}>{e.note || e.notePhoto ? 'Editar nota' : 'Anotar como foi'}</button>
       <ArmButton className="btn line block" style={{ marginTop: 20 }} onConfirm={() => {
         update((st) => { st.events = st.events.filter((x) => x.id !== id); });
         resetChat();
         closeSheet();
         toast('Removido.');
       }}>Remover compromisso</ArmButton>
+    </>
+  );
+}
+
+/* ---------- Remédios do pediatra ---------- */
+function MedForm({ childId, id }: { childId: string; id?: string }) {
+  const { closeSheet, toast } = useUi();
+  const s = useAppState();
+  const m = id ? s.medicines.find((x) => x.id === id) : undefined;
+  const kid = s.children.find((c) => c.id === childId);
+  const [errs, setErrs] = useState<Errs>({});
+
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const name = str(fd, 'name').trim();
+    const dose = parseMl(fd.get('dose'));
+    const time = str(fd, 'time');
+    const start = str(fd, 'start');
+    const days = Number(str(fd, 'days'));
+    const next: Errs = {};
+    if (!name) next.name = 'Digite o nome do remédio.';
+    if (dose == null) next.dose = 'Digite a dose em ml, como 2,5.';
+    if (!time) next.time = 'Escolha o horário.';
+    if (!ISO.test(start)) next.start = 'Escolha a data de início.';
+    if (!Number.isInteger(days) || days < 1 || days > 365) next.days = 'Use de 1 a 365 dias.';
+    setErrs(next);
+    if (Object.keys(next).length) return;
+    const data = { name, doseMl: dose as number, time, start, days };
+    update((st) => {
+      if (m) Object.assign(st.medicines.find((x) => x.id === m.id)!, data);
+      else st.medicines.push({ id: uid(), childId, ...data });
+    });
+    closeSheet();
+    toast('Remédio salvo.');
+  }
+
+  return (
+    <form noValidate onSubmit={submit}>
+      <p className="detail muted">Remédio de {kid ? kid.name : 'seu filho'}. {PRESCRIPTION_NOTICE} O app só guarda o que o pediatra receitou.</p>
+      <div className="field"><label htmlFor="md-name">Nome do remédio</label>
+        <input className="inp" id="md-name" name="name" maxLength={60} autoComplete="off" defaultValue={m?.name} aria-invalid={invalid(errs.name)} /><Err msg={errs.name} /></div>
+      <div className="grid2">
+        <div className="field"><label htmlFor="md-dose">Dose (ml)</label>
+          <input className="inp" id="md-dose" name="dose" inputMode="decimal" autoComplete="off" placeholder="2,5" defaultValue={m ? String(m.doseMl).replace('.', ',') : ''} aria-invalid={invalid(errs.dose)} /><Err msg={errs.dose} /></div>
+        <div className="field"><label htmlFor="md-time">Horário</label>
+          <input className="inp" id="md-time" name="time" type="time" defaultValue={m?.time} aria-invalid={invalid(errs.time)} /><Err msg={errs.time} /></div>
+      </div>
+      <div className="grid2">
+        <div className="field"><label htmlFor="md-start">Começa em</label>
+          <input className="inp" id="md-start" name="start" type="date" defaultValue={m?.start || D.todayISO()} aria-invalid={invalid(errs.start)} /><Err msg={errs.start} /></div>
+        <div className="field"><label htmlFor="md-days">Duração (dias)</label>
+          <input className="inp" id="md-days" name="days" type="number" inputMode="numeric" min={1} max={365} defaultValue={m?.days} aria-invalid={invalid(errs.days)} /><Err msg={errs.days} /></div>
+      </div>
+      <button className="btn block big" type="submit" style={{ marginTop: 14 }}>Salvar remédio</button>
+    </form>
+  );
+}
+
+function MedView({ id }: { id: string }) {
+  const { closeSheet, toast } = useUi();
+  const s = useAppState();
+  const sheets = useSheets();
+  const m = s.medicines.find((x) => x.id === id);
+  if (!m) return null;
+  const st = statusOf(m);
+  const kid = s.children.find((c) => c.id === m.childId);
+  return (
+    <>
+      <p className="detail">{mlLabel(m.doseMl)} às {D.timeLabel(m.time)}</p>
+      <p className="detail muted">Para {kid ? kid.name : 'seu filho'}. De {D.brDate(m.start)} até {D.brDate(endOf(m))} ({m.days} {m.days === 1 ? 'dia' : 'dias'}).
+        {st === 'active' ? ` Hoje é o dia ${dayOf(m)} de ${m.days}.` : st === 'done' ? ' Tratamento terminado.' : ' Ainda não começou.'}</p>
+      <p className="detail muted">{PRESCRIPTION_NOTICE}</p>
+      <button type="button" className="btn line block" style={{ marginTop: 16 }} onClick={() => sheets.medForm(m.childId, m.id)}>Editar</button>
+      <ArmButton className="btn line block" style={{ marginTop: 10 }} onConfirm={() => {
+        update((x) => { x.medicines = x.medicines.filter((y) => y.id !== id); });
+        closeSheet();
+        toast('Removido.');
+      }}>Remover remédio</ArmButton>
     </>
   );
 }
@@ -575,21 +711,17 @@ function RoutineForm() {
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const zap = str(fd, 'whatsapp').trim();
-    const digits = zap.replace(/\D/g, '');
     const media = parseNote(fd.get('media'));
     const next: Errs = {};
-    if (zap && (digits.length < 10 || digits.length > 11)) next.whatsapp = 'Use DDD e número, como (21) 98888-1234.';
     if (media == null || Number.isNaN(media) || media < 1) next.media = 'Use uma média de 1 a 10.';
     setErrs(next);
     if (Object.keys(next).length) return;
     update((st) => {
-      st.motherName = str(fd, 'name').trim();
       st.routine = {
         ...st.routine,
         days: [0, 1, 2, 3, 4, 5, 6].filter((n) => fd.get(`d${n}`) === 'on'),
         start: str(fd, 'start') || st.routine.start, end: str(fd, 'end') || st.routine.end,
-        vacation: str(fd, 'vacation').trim(), whatsapp: zap,
+        vacation: str(fd, 'vacation').trim(),
       };
       st.media = media as number;
     });
@@ -599,8 +731,7 @@ function RoutineForm() {
 
   return (
     <form noValidate onSubmit={submit}>
-      <div className="field"><label htmlFor="m-name">Seu nome</label><input className="inp" id="m-name" name="name" maxLength={40} autoComplete="given-name" defaultValue={s.motherName} /></div>
-      <h3 className="lbl top-gap">Dias em que você trabalha</h3>
+      <h3 className="lbl">Dias em que você trabalha</h3>
       <div className="days">
         {WD.map(([l, name, n]) => (
           <label className="day dchk" key={n}><input type="checkbox" name={`d${n}`} aria-label={name} defaultChecked={r.days.includes(n)} /><span>{l}</span></label>
@@ -611,10 +742,61 @@ function RoutineForm() {
         <div className="field"><label htmlFor="m-end">Sai às</label><input className="inp" id="m-end" name="end" type="time" defaultValue={r.end} /></div>
       </div>
       <div className="field"><label htmlFor="m-vac">Próximas férias <span className="muted">(opcional)</span></label><input className="inp" id="m-vac" name="vacation" maxLength={40} placeholder="Ex.: 5 a 19 de janeiro" defaultValue={r.vacation} /></div>
-      <div className="field"><label htmlFor="m-zap">WhatsApp para os avisos</label><input className="inp" id="m-zap" name="whatsapp" type="tel" inputMode="tel" maxLength={20} defaultValue={r.whatsapp} aria-invalid={invalid(errs.whatsapp)} /><Err msg={errs.whatsapp} /></div>
       <div className="field"><label htmlFor="m-media">Média para passar de ano (escola dos filhos)</label>
         <input className="inp" id="m-media" name="media" inputMode="decimal" autoComplete="off" defaultValue={fmt(s.media)} aria-invalid={invalid(errs.media)} />
         <p className="hint">A escola define a regra. O cálculo usa a soma dos {BIMESTRES} bimestres dividida por {BIMESTRES}.</p><Err msg={errs.media} /></div>
+      <button className="btn block big" type="submit" style={{ marginTop: 14 }}>Salvar</button>
+    </form>
+  );
+}
+
+function ProfileForm() {
+  const { closeSheet, toast } = useUi();
+  const s = useAppState();
+  const [exp, setExp] = useState<boolean | null>(s.profile.experienced);
+  const opt = (v: boolean, label: string) => (
+    <button type="button" className={`opt${exp === v ? ' on' : ''}`} aria-pressed={exp === v} onClick={() => setExp(exp === v ? null : v)}>{label}</button>
+  );
+
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const name = str(new FormData(e.currentTarget), 'name').trim();
+    update((st) => { st.motherName = name; st.profile.experienced = exp; });
+    closeSheet();
+    toast('Perfil salvo.');
+  }
+
+  return (
+    <form noValidate onSubmit={submit}>
+      <div className="field first"><label htmlFor="p-name">Seu nome</label><input className="inp" id="p-name" name="name" maxLength={40} autoComplete="given-name" defaultValue={s.motherName} /></div>
+      <h3 className="lbl top-gap">Você já tem experiência com bebês?</h3>
+      <div className="opts">{opt(false, 'É o meu primeiro filho')}{opt(true, 'Não é o primeiro filho')}</div>
+      <p className="hint">Gestante e mãe recente o app calcula sozinho, pela data prevista e pela data de nascimento.</p>
+      <button className="btn block big" type="submit" style={{ marginTop: 14 }}>Salvar</button>
+    </form>
+  );
+}
+
+function WhatsAppForm() {
+  const { closeSheet, toast } = useUi();
+  const r = useAppState().routine;
+  const [err, setErr] = useState('');
+
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const zap = str(new FormData(e.currentTarget), 'whatsapp').trim();
+    const digits = zap.replace(/\D/g, '');
+    if (zap && (digits.length < 10 || digits.length > 11)) { setErr('Use DDD e número, como (21) 98888-1234.'); return; }
+    update((st) => { st.routine.whatsapp = zap; });
+    closeSheet();
+    toast(zap ? 'Número salvo.' : 'Número removido.');
+  }
+
+  return (
+    <form noValidate onSubmit={submit}>
+      <div className="field first"><label htmlFor="z-zap">Número do WhatsApp</label>
+        <input className="inp" id="z-zap" name="whatsapp" type="tel" inputMode="tel" maxLength={20} placeholder="(21) 98888-1234" defaultValue={r.whatsapp} aria-invalid={invalid(err)} />
+        <p className="hint">Todo aviso diz de qual filho é. Deixe em branco para remover o número.</p><Err msg={err} /></div>
       <button className="btn block big" type="submit" style={{ marginTop: 14 }}>Salvar</button>
     </form>
   );
@@ -631,7 +813,7 @@ function ConsentView() {
       <ul className="plain">
         {line(c.health, 'uso dos meus dados de saúde e de gestação')}
         {line(c.legal, 'uso dos dados dos filhos, como responsável legal')}
-        {line(c.stats, 'estatísticas sem nome (opcional)')}
+        {line(c.stats, 'estatísticas anônimas (opcional)')}
       </ul>
       <p className="detail muted">Sem a autorização de saúde o app não consegue funcionar. Por isso, retirar essa autorização apaga tudo o que está guardado neste aparelho.</p>
       <ArmButton className="btn line block" style={{ marginTop: 16 }} onConfirm={() => { resetAll(); resetChat(); closeSheet(); router.push('/'); toast('Tudo apagado.'); }}>Retirar e apagar tudo</ArmButton>
@@ -729,6 +911,10 @@ export function useSheets() {
     endedList: () => openSheet('Acompanhamentos encerrados', <EndedList />),
     eventForm: (opts: { category?: Category; childId?: string; date?: string } = {}) =>
       openSheet('Novo compromisso', <EventForm {...opts} />),
+    noteForm: (id: string) => {
+      const e = getState().events.find((x) => x.id === id);
+      if (e) openSheet(`Como foi: ${e.title}`, <NoteForm id={id} />);
+    },
     eventView: (id: string) => {
       const e = getState().events.find((x) => x.id === id);
       if (e) openSheet(e.title, <EventView id={id} />);
@@ -744,6 +930,13 @@ export function useSheets() {
     boletimView: () => {
       const c = currentChild(getState());
       if (c && getState().boletim[c.id]) openSheet('Foto do boletim', <BoletimView onReplace={boletimFlow} />);
+    },
+    profileForm: () => openSheet('Meu perfil', <ProfileForm />),
+    whatsappForm: () => openSheet('Número do WhatsApp', <WhatsAppForm />),
+    medForm: (childId: string, id?: string) => openSheet(id ? 'Editar remédio' : 'Novo remédio', <MedForm childId={childId} id={id} />),
+    medView: (id: string) => {
+      const m = getState().medicines.find((x) => x.id === id);
+      if (m) openSheet(m.name, <MedView id={id} />);
     },
     routineForm: () => openSheet('Minha rotina', <RoutineForm />),
     consentView: () => openSheet('Seus consentimentos', <ConsentView />),

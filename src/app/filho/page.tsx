@@ -3,6 +3,7 @@
 import { currentChild, useAppState, type AppState, type Child } from '@/lib/store';
 import * as D from '@/lib/dates';
 import { fmt, notesText, sortSubjects, BIMESTRES, type Ranked } from '@/lib/grades';
+import { PRESCRIPTION_NOTICE, mlLabel, statusOf } from '@/lib/medicines';
 import { PHASES, TIPS, TIPS_TITLE, overdue, phaseLine, phaseOf, weeksOf, type Phase } from '@/lib/phases';
 import { setFilhoTab, useFilhoTab } from '@/lib/view';
 import type { Subject } from '@/lib/store';
@@ -31,6 +32,31 @@ function Docs({ s, c, sheets }: { s: AppState; c: Child; sheets: Sheets }) {
       ) : (
         <p className="muted pad">{c.kind === 'pregnancy' ? 'Guarde pedidos de exame e resultados por foto.' : 'Guarde exames, receitas e a carteira de vacinação por foto.'}</p>
       )}
+    </>
+  );
+}
+
+function Medicines({ s, c, sheets }: { s: AppState; c: Child; sheets: Sheets }) {
+  const rank = { active: 0, future: 1, done: 2 };
+  const list = s.medicines.filter((m) => m.childId === c.id)
+    .sort((a, b) => rank[statusOf(a)] - rank[statusOf(b)] || a.time.localeCompare(b.time));
+  const label = { active: 'Em andamento', future: 'Ainda não começou', done: 'Terminado' };
+  return (
+    <>
+      <div className="sec"><h2 className="h2">Remédios</h2>
+        <button type="button" className="btn line small" onClick={() => sheets.medForm(c.id)}><Icons.plus size={18} />Novo</button></div>
+      <p className="hint pad">{PRESCRIPTION_NOTICE}</p>
+      {list.length ? (
+        <div className="list" style={{ marginTop: 8 }}>
+          {list.map((m) => (
+            <button type="button" className="row flatrow" key={m.id} onClick={() => sheets.medView(m.id)}>
+              <div className="grow"><p className="t">{m.name}</p>
+                <p className="s">{mlLabel(m.doseMl)} às {D.timeLabel(m.time)}. {label[statusOf(m)]}</p></div>
+              <span className="muted"><Icons.chevron size={20} /></span>
+            </button>
+          ))}
+        </div>
+      ) : <p className="muted pad">Registre o remédio que o pediatra receitou: nome, dose, horário e quantos dias.</p>}
     </>
   );
 }
@@ -86,8 +112,9 @@ function Saude({ s, c, ph, sheets }: { s: AppState; c: Child; ph: Phase; sheets:
       <div className="sec"><h2 className="h2">{kind}</h2>
         <button type="button" className="btn line small" onClick={() => sheets.eventForm({ category: 'saude' })}><Icons.plus size={18} />Novo</button></div>
       {rest.length
-        ? <div className="list">{rest.map((e) => <EventRow key={e.id} s={s} e={e} onOpen={sheets.eventView} />)}</div>
+        ? <div className="list">{rest.map((e) => <EventRow key={e.id} s={s} e={e} onOpen={sheets.eventView} onNote={sheets.noteForm} />)}</div>
         : <p className="muted pad">{next.length ? 'Nenhum outro compromisso de saúde.' : 'Os compromissos de saúde aparecem aqui.'}</p>}
+      {c.kind === 'born' && <Medicines s={s} c={c} sheets={sheets} />}
       <Docs s={s} c={c} sheets={sheets} />
       <Tips ph={ph} />
     </>
@@ -122,7 +149,7 @@ function Escola({ s, c, ph, sheets }: { s: AppState; c: Child; ph: Phase; sheets
       <div className="sec"><h2 className="h2">Calendário da escola</h2>
         <button type="button" className="btn line small" onClick={() => sheets.eventForm({ category: 'escola' })}><Icons.plus size={18} />Novo</button></div>
       {rest.length
-        ? <div className="list">{rest.map((e) => <EventRow key={e.id} s={s} e={e} onOpen={sheets.eventView} />)}</div>
+        ? <div className="list">{rest.map((e) => <EventRow key={e.id} s={s} e={e} onOpen={sheets.eventView} onNote={sheets.noteForm} />)}</div>
         : <p className="muted pad">{next.length ? 'Nenhum outro compromisso da escola.' : 'Os compromissos da escola aparecem aqui.'}</p>}
 
       {ph === 'pre' ? (
