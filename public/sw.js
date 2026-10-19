@@ -1,7 +1,7 @@
 // Service worker: abre o app sem internet. Rede primeiro para o próprio site, cache como reserva.
 // Os arquivos do Next têm nome com hash, então são guardados conforme o uso, não numa lista fixa.
-const CACHE = 'appmae-v2';
-const CORE = ['/', '/escola/', '/saude/', '/whatsapp/', '/novo-filho/', '/manifest.webmanifest', '/icons/icon.svg'];
+const CACHE = 'appmae-v4';
+const CORE = ['/', '/filho/', '/eu/', '/whatsapp/', '/novo-filho/', '/manifest.webmanifest', '/icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
