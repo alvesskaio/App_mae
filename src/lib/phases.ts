@@ -58,3 +58,15 @@ export const TIPS_TITLE: Record<Phase, string> = {
   pre: 'Para organizar a escola',
   escola: 'Para organizar a escola',
 };
+
+// Dicas da aba Saúde. Até os 5 anos valem as mesmas de TIPS; na idade escolar a aba Saúde não deve falar de escola.
+export const TIPS_SAUDE: Record<Phase, string[]> = {
+  ...TIPS,
+  pre: ['Levar a caderneta de vacinação nas consultas', 'Anotar alergias e remédios de uso contínuo', 'Salvar o contato do pediatra'],
+  escola: ['Levar a caderneta de vacinação nas consultas', 'Anotar alergias e remédios de uso contínuo', 'Guardar exames e receitas por foto'],
+};
+export const TIPS_SAUDE_TITLE: Record<Phase, string> = {
+  ...TIPS_TITLE,
+  pre: 'Para manter à mão',
+  escola: 'Para manter à mão',
+};

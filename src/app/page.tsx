@@ -4,6 +4,8 @@ import { activeChildren, useAppState, visibleEvents, type AppState } from '@/lib
 import * as D from '@/lib/dates';
 import { fmt, worst } from '@/lib/grades';
 import { overdue, phaseLine } from '@/lib/phases';
+import { update } from '@/lib/store';
+import { complete, repeatLabel } from '@/lib/reminders';
 import { vaccinesOf } from '@/lib/vaccines';
 import { PRESCRIPTION_NOTICE, dayOf, mlLabel, statusOf } from '@/lib/medicines';
 import { Icons } from '@/components/Icons';
@@ -59,6 +61,10 @@ export default function Hoje() {
   const meds = s.medicines
     .filter((m) => statusOf(m) === 'active' && kids.some((k) => k.id === m.childId))
     .sort((a, b) => a.time.localeCompare(b.time));
+  const reminders = s.reminders
+    .filter((r) => !r.done)
+    .sort((a, b) => (a.date + (a.time || '00:00')).localeCompare(b.date + (b.time || '00:00')))
+    .slice(0, 4);
   const rank = kids
     .map((k) => ({ k, w: k.kind === 'born' ? worst(subjectsOf(s, k), s.media) : null }))
     .find((x) => x.w);
@@ -94,6 +100,22 @@ export default function Hoje() {
           <div className="list">{hoje.map((e) => <EventRow key={e.id} s={s} e={e} tag hot onOpen={sheets.eventView} onNote={sheets.noteForm} />)}</div>
         </>
       )}
+
+      <div className="sec"><h2 className="h2">Meus lembretes</h2>
+        <button type="button" className="btn line small" onClick={() => sheets.reminderForm()}><Icons.plus size={18} />Novo</button></div>
+      {reminders.length ? (
+        <div className="list">
+          {reminders.map((r) => (
+            <div className="row flatrow remrow" key={r.id}>
+              <button type="button" className="remcheck" aria-label={`Marcar como feito: ${r.text}`} onClick={() => update((st) => { const x = st.reminders.find((y) => y.id === r.id); if (x) complete(x); })} />
+              <button type="button" className="rowmain" onClick={() => sheets.reminderForm(r.id)}>
+                <div className="grow"><p className="t">{r.text}</p>
+                  <p className={`s${r.date < today ? ' late' : ''}`}>{r.date < today ? `Atrasado desde ${D.brDateShort(r.date)}` : `${r.date === today ? 'Hoje' : D.longDate(r.date)}${r.time ? ', às ' + D.timeLabel(r.time) : ''}`}{repeatLabel(r) ? ` · ${repeatLabel(r)}` : ''}</p></div>
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : <p className="muted pad">Anote o que não quer esquecer, como "dia 29, pagar a escola".</p>}
 
       <h2 className="h2 sp">Cada filho</h2>
       <div className="list">

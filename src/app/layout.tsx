@@ -4,8 +4,8 @@ import ServiceWorker from '@/components/ServiceWorker';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'App Mãe',
-  description: 'Saúde, escola e compromissos dos filhos num lugar só, da gestação até a escola. Versão de teste.',
+  title: 'Owl Day',
+  description: 'Saúde, escola e compromissos dos filhos num lugar só, da gestação até a escola.',
   robots: { index: false, follow: false },
   manifest: '/manifest.webmanifest',
   icons: {
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     ],
     apple: '/icons/apple-touch-icon.png',
   },
-  appleWebApp: { capable: true, title: 'App Mãe', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'Owl Day', statusBarStyle: 'default' },
   other: { 'mobile-web-app-capable': 'yes' },
 };
 
@@ -29,7 +29,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

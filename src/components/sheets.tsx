@@ -9,6 +9,10 @@ import {
 import * as D from '@/lib/dates';
 import { BIMESTRES, fmt, parseNote, type Note } from '@/lib/grades';
 import { phaseLine, weeksOf } from '@/lib/phases';
+import { ReminderForm } from './RemindersSheets';
+import { PrenatalForm, PrenatalList } from './PrenatalSheets';
+import { EXAMS } from '@/lib/prenatal';
+import { BirthDataForm, CardView, HealthForm, MeasureForm } from './CardSheets';
 import { DOSES, doseLabel, monthLabel, vaccinesOf } from '@/lib/vaccines';
 import { PRESCRIPTION_NOTICE, dayOf, endOf, mlLabel, parseMl, statusOf } from '@/lib/medicines';
 import { setFilhoTab } from '@/lib/view';
@@ -989,6 +993,28 @@ export function useSheets() {
     openSheet('Registrar nascimento', <BirthForm id={id} />);
   }
 
+  const prenatalNav = {
+    prenatalList: (childId: string) => {
+      const k = getState().children.find((c) => c.id === childId);
+      if (k) openSheet('Exames do pré-natal', <PrenatalList childId={childId} nav={prenatalNav} />);
+    },
+    prenatalForm: (childId: string, examId: string) => {
+      const e = EXAMS.find((x) => x.id === examId);
+      if (e) openSheet('Exame feito', <PrenatalForm childId={childId} examId={examId} nav={prenatalNav} />);
+    },
+    gestacaoForm: (id: string) => openSheet('Data prevista do parto', <GestacaoForm id={id} />),
+  };
+
+  const nav = {
+    cardView: (childId: string) => {
+      const k = getState().children.find((c) => c.id === childId);
+      if (k) openSheet(`Carteirinha de ${k.name}`, <CardView childId={childId} nav={nav} />);
+    },
+    birthDataForm: (childId: string) => openSheet('Dados do nascimento', <BirthDataForm childId={childId} nav={nav} />),
+    healthForm: (childId: string) => openSheet('Alergias e remédios de uso contínuo', <HealthForm childId={childId} nav={nav} />),
+    measureForm: (childId: string, id?: string) => openSheet(id ? 'Editar medida' : 'Nova medida', <MeasureForm childId={childId} id={id} nav={nav} />),
+  };
+
   return {
     boletimFlow,
     subjectForm,
@@ -1037,6 +1063,9 @@ export function useSheets() {
       const m = getState().medicines.find((x) => x.id === id);
       if (m) openSheet(m.name, <MedView id={id} />);
     },
+    ...nav,
+    reminderForm: (id?: string) => openSheet(id ? 'Editar lembrete' : 'Novo lembrete', <ReminderForm id={id} />),
+    prenatalList: prenatalNav.prenatalList,
     vaccineList: (childId: string) => {
       const k = getState().children.find((c) => c.id === childId);
       if (k) openSheet(`Vacinas de ${k.name}`, <VaccineList childId={childId} />);

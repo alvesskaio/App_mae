@@ -39,7 +39,7 @@ export default function Shell({ children }: { children: ReactNode }) {
   // Troca de tela (ou de etapa do cadastro) volta ao topo e atualiza o título da aba.
   useEffect(() => {
     document.getElementById('app')?.scrollTo({ top: 0 });
-    document.title = `${title} · App Mãe`;
+    document.title = `${title} · Owl Day`;
   }, [key, title, onboarding]);
 
   return (

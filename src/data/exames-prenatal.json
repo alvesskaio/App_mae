@@ -1,0 +1,20 @@
+{
+  "_aviso": "RASCUNHO para validação. Não é protocolo oficial nem orientação médica. Edite só este arquivo: cada item é um exame. 'de' e 'ate' são a primeira e a última semana de gestação em que ele costuma ser feito. Não mude o 'id' de itens já usados, senão os exames marcados como feitos deixam de casar.",
+  "versao": "rascunho-2",
+  "_fontes": [
+    "Ministério da Saúde, Caderno de Atenção Básica nº 32, Atenção ao pré-natal de baixo risco (2012): fonte de referência, não consegui abrir o texto completo.",
+    "Linha de cuidado da saúde da mulher, pré-natal (Jundiaí/SP), baseada no Ministério da Saúde: exames da primeira consulta e ultrassom obstétrico entre 18 e 20 semanas.",
+    "Assistência ao pré-natal, guia para médicos (Estratégia Med), que cita o Ministério da Saúde: TOTG de 75 g entre 24 e 28 semanas, HIV repetido no 3º trimestre, cultura de estreptococo B por volta de 36 a 37 semanas.",
+    "Estudos brasileiros sobre estreptococo B: coleta entre 35 e 37 semanas."
+  ],
+  "_nao_confirmado": "Ultrassom do 1º e do 3º trimestre e as janelas exatas de repetição das sorologias e do hemograma não foram confirmados nas fontes. Ficaram de fora ou com janela larga: a equipe de saúde decide e pode incluir aqui.",
+  "exames": [
+    { "id": "sangue-inicial", "exame": "Hemograma, tipagem sanguínea e fator Rh, glicemia de jejum", "de": 4, "ate": 12 },
+    { "id": "sorologias-1", "exame": "Sorologias (HIV, sífilis, hepatite B e C, toxoplasmose)", "de": 4, "ate": 12 },
+    { "id": "urina-1", "exame": "Urina tipo 1 e urocultura", "de": 4, "ate": 12 },
+    { "id": "us-morfologico", "exame": "Ultrassom obstétrico (morfológico)", "de": 18, "ate": 24 },
+    { "id": "totg", "exame": "Teste de tolerância à glicose (75 g)", "de": 24, "ate": 28 },
+    { "id": "sorologias-3tri", "exame": "HIV e sífilis de repetição (3º trimestre)", "de": 28, "ate": 34 },
+    { "id": "estrepto-b", "exame": "Cultura para estreptococo do grupo B", "de": 35, "ate": 37 }
+  ]
+}

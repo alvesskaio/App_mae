@@ -14,7 +14,7 @@ function download() {
   const blob = new Blob([JSON.stringify(getState(), null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `app-mae-dados-${D.todayISO()}.json`;
+  a.download = `owl-day-dados-${D.todayISO()}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();

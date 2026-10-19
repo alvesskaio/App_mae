@@ -8,6 +8,11 @@ export interface Child {
   id: string; kind: Kind; status: 'active' | 'ended'; color: number;
   name: string; birth: string; dpp: string; twins: boolean; school: string; grade: string;
   endedAt?: string; fromPregnancy?: boolean; twinOf?: string;
+  // Carteirinha: dados do nascimento, todos opcionais.
+  apgar1?: number | null; apgar5?: number | null; blood?: string;
+  birthWeightKg?: number | null; birthLengthCm?: number | null; gestWeeks?: number | null; delivery?: string;
+  // Texto livre, para mostrar a outro médico ou à escola.
+  allergies?: string; ongoing?: string;
 }
 export interface Subject { id: string; childId: string; name: string; notes: Note[] }
 export type Category = 'saude' | 'escola' | 'outro';
@@ -19,6 +24,16 @@ export interface Doc { id: string; childId: string; title: string; date: string;
 export interface Medicine { id: string; childId: string; name: string; doseMl: number; time: string; start: string; days: number }
 // Dose aplicada (caderneta). doseId liga ao calendário em src/data/vacinas.json; fica null nas vacinas fora dele.
 export interface VaccineShot { id: string; childId: string; doseId: string | null; name: string; date: string }
+// Medida da carteirinha: peso (kg) e perímetro cefálico (cm) numa data. Só registro, sem curva de crescimento.
+export interface Measure { id: string; childId: string; date: string; weightKg: number | null; headCm: number | null; heightCm?: number | null }
+// Exame do pré-natal marcado como feito. examId liga ao catálogo em src/data/exames-prenatal.json.
+export interface PrenatalDone { id: string; childId: string; examId: string; date: string; note: string; photo: string | null }
+// Lembrete livre da mãe (não pertence a nenhum filho).
+// Com repetição, `date` é a próxima vez; `day` guarda o dia do mês de origem; `until` é a data final (vazia = sem fim).
+export interface Reminder {
+  id: string; text: string; date: string; time: string; done: boolean;
+  repeat?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'; weekdays?: number[]; day?: number; until?: string;
+}
 export interface Boletim { photo: string; at: string }
 
 export type OnbStep = 'welcome' | 'consent' | 'e1' | 'e2' | 'e3';
@@ -46,6 +61,9 @@ export interface AppState {
   docs: Doc[];
   medicines: Medicine[];
   vaccines: VaccineShot[];
+  measures: Measure[];
+  prenatal: PrenatalDone[];
+  reminders: Reminder[];
   boletim: Record<string, Boletim>;
 }
 
@@ -66,7 +84,7 @@ function empty(): AppState {
   return {
     v: 2, onboarded: false, onb: emptyOnb(), consent: emptyConsent(), motherName: '', profile: { experienced: null }, media: 6,
     routine: emptyRoutine(), currentChildId: null,
-    children: [], subjects: [], events: [], docs: [], medicines: [], vaccines: [], boletim: {},
+    children: [], subjects: [], events: [], docs: [], medicines: [], vaccines: [], measures: [], prenatal: [], reminders: [], boletim: {},
   };
 }
 
@@ -176,6 +194,8 @@ export function removeChild(st: AppState, id: string) {
   st.docs = st.docs.filter((x) => x.childId !== id);
   st.medicines = st.medicines.filter((x) => x.childId !== id);
   st.vaccines = st.vaccines.filter((x) => x.childId !== id);
+  st.measures = st.measures.filter((x) => x.childId !== id);
+  st.prenatal = st.prenatal.filter((x) => x.childId !== id);
   delete st.boletim[id];
   if (st.currentChildId === id) {
     const next = activeChildren(st)[0];

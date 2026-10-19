@@ -5,3 +5,6 @@ out/
 .DS_Store
 next-env.d.ts
 *.tsbuildinfo
+
+# Anotações de trabalho por branch
+docs_aux/

@@ -54,7 +54,7 @@ export default function Whatsapp() {
       <div className="chat-head">
         <Link className="back" href="/" aria-label="Voltar ao app"><Icons.back size={24} /></Link>
         <div className="av" aria-hidden="true">A</div>
-        <div><p className="nm">App Mãe</p><p className="st">Simulação da conversa no WhatsApp</p></div>
+        <div><p className="nm">Owl Day</p><p className="st">Simulação da conversa no WhatsApp</p></div>
       </div>
       <div className="chat-list" ref={list} role="log" aria-live="polite" aria-label="Conversa">
         <div className="day">Hoje</div>
