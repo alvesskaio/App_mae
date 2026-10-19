@@ -7,7 +7,7 @@ import type { Module } from '@/lib/phases';
 import { setFilhoTab } from '@/lib/view';
 import { useUi } from './Ui';
 
-export const CAT: Record<string, string> = { saude: 'Saúde', escola: 'Escola', outro: 'Outro' };
+export const CAT: Record<string, string> = { saude: 'Saúde', escola: 'Escola', outro: 'Dia a dia' };
 
 // Cor do filho: c0 a c3. Sem filho (compromisso da família), neutra.
 export const pal = (c?: Pick<Child, 'color'> | null) => (c ? `c${(c.color || 0) % 4}` : 'c-none');
@@ -37,23 +37,27 @@ export function useGotoKid() {
 }
 
 // Linha de compromisso. Com vários filhos na tela, o nome do filho aparece sempre em texto.
-export function EventRow({ s, e, tag, hot, onOpen }: {
-  s: AppState; e: AppEvent; tag?: boolean; hot?: boolean; onOpen: (id: string) => void;
+export function EventRow({ s, e, tag, hot, onOpen, onNote }: {
+  s: AppState; e: AppEvent; tag?: boolean; hot?: boolean; onOpen: (id: string) => void; onNote: (id: string) => void;
 }) {
   const k = kidOf(s, e.childId);
   const title = `${e.title}${e.time ? ', ' + D.timeLabel(e.time) : ''}`;
   return (
-    <button type="button" className={`row${hot ? ' hot' : ''} ${pal(k)}`} onClick={() => onOpen(e.id)}>
-      <div className="tile"><b>{D.dayNumber(e.date)}</b><span>{hot && e.date === D.todayISO() ? 'hoje' : D.weekdayShort(e.date)}</span></div>
-      <div className="grow">
-        <p className="t">{title}</p>
-        <p className="sline">
-          {tag
-            ? (k ? <span className={`tag ${pal(k)}`}>{k.name}</span> : <span className="s">Família toda</span>)
-            : <span className="s">{CAT[e.category] || 'Outro'}</span>}
-        </p>
-      </div>
-    </button>
+    <div className={`row${hot ? ' hot' : ''} ${pal(k)}`}>
+      <button type="button" className="rowmain" onClick={() => onOpen(e.id)}>
+        <div className="tile"><b>{D.dayNumber(e.date)}</b><span>{hot && e.date === D.todayISO() ? 'hoje' : D.weekdayShort(e.date)}</span></div>
+        <div className="grow">
+          <p className="t">{title}</p>
+          <p className="sline">
+            {tag
+              ? (k ? <span className={`tag ${pal(k)}`}>{k.name}</span> : <span className="s">Família toda</span>)
+              : <span className="s">{CAT[e.category] || 'Dia a dia'}</span>}
+            {(e.note || e.notePhoto) && <span className="s"> · com nota</span>}
+          </p>
+        </div>
+      </button>
+      <button type="button" className="linkish notebtn" aria-label={`Anotar como foi: ${e.title}`} onClick={() => onNote(e.id)}>Anotar</button>
+    </div>
   );
 }
 

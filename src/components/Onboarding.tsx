@@ -49,7 +49,8 @@ function Welcome() {
 
   return (
     <div className="welcome">
-      <div className="mark" aria-hidden="true" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="mark" src="/icons/owl.png" alt="" width={96} height={96} />
       <h1 className="h1 xl">Bem-vinda</h1>
       <p className="lead">Organize saúde, escola e compromissos dos seus filhos num lugar só, da gestação até os 14 anos.</p>
       <p className="lead small">Esta é uma versão de teste: o que você digitar fica salvo só neste aparelho.</p>
