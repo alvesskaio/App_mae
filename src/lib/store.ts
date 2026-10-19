@@ -26,6 +26,8 @@ export interface Medicine { id: string; childId: string; name: string; doseMl: n
 export interface VaccineShot { id: string; childId: string; doseId: string | null; name: string; date: string }
 // Medida da carteirinha: peso (kg) e perímetro cefálico (cm) numa data. Só registro, sem curva de crescimento.
 export interface Measure { id: string; childId: string; date: string; weightKg: number | null; headCm: number | null; heightCm?: number | null }
+// Exame do pré-natal marcado como feito. examId liga ao catálogo em src/data/exames-prenatal.json.
+export interface PrenatalDone { id: string; childId: string; examId: string; date: string; note: string; photo: string | null }
 export interface Boletim { photo: string; at: string }
 
 export type OnbStep = 'welcome' | 'consent' | 'e1' | 'e2' | 'e3';
@@ -54,6 +56,7 @@ export interface AppState {
   medicines: Medicine[];
   vaccines: VaccineShot[];
   measures: Measure[];
+  prenatal: PrenatalDone[];
   boletim: Record<string, Boletim>;
 }
 
@@ -74,7 +77,7 @@ function empty(): AppState {
   return {
     v: 2, onboarded: false, onb: emptyOnb(), consent: emptyConsent(), motherName: '', profile: { experienced: null }, media: 6,
     routine: emptyRoutine(), currentChildId: null,
-    children: [], subjects: [], events: [], docs: [], medicines: [], vaccines: [], measures: [], boletim: {},
+    children: [], subjects: [], events: [], docs: [], medicines: [], vaccines: [], measures: [], prenatal: [], boletim: {},
   };
 }
 
@@ -185,6 +188,7 @@ export function removeChild(st: AppState, id: string) {
   st.medicines = st.medicines.filter((x) => x.childId !== id);
   st.vaccines = st.vaccines.filter((x) => x.childId !== id);
   st.measures = st.measures.filter((x) => x.childId !== id);
+  st.prenatal = st.prenatal.filter((x) => x.childId !== id);
   delete st.boletim[id];
   if (st.currentChildId === id) {
     const next = activeChildren(st)[0];

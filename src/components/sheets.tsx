@@ -9,6 +9,8 @@ import {
 import * as D from '@/lib/dates';
 import { BIMESTRES, fmt, parseNote, type Note } from '@/lib/grades';
 import { phaseLine, weeksOf } from '@/lib/phases';
+import { PrenatalForm, PrenatalList } from './PrenatalSheets';
+import { EXAMS } from '@/lib/prenatal';
 import { BirthDataForm, CardView, HealthForm, MeasureForm } from './CardSheets';
 import { DOSES, doseLabel, monthLabel, vaccinesOf } from '@/lib/vaccines';
 import { PRESCRIPTION_NOTICE, dayOf, endOf, mlLabel, parseMl, statusOf } from '@/lib/medicines';
@@ -990,6 +992,18 @@ export function useSheets() {
     openSheet('Registrar nascimento', <BirthForm id={id} />);
   }
 
+  const prenatalNav = {
+    prenatalList: (childId: string) => {
+      const k = getState().children.find((c) => c.id === childId);
+      if (k) openSheet('Exames do pré-natal', <PrenatalList childId={childId} nav={prenatalNav} />);
+    },
+    prenatalForm: (childId: string, examId: string) => {
+      const e = EXAMS.find((x) => x.id === examId);
+      if (e) openSheet('Exame feito', <PrenatalForm childId={childId} examId={examId} nav={prenatalNav} />);
+    },
+    gestacaoForm: (id: string) => openSheet('Data prevista do parto', <GestacaoForm id={id} />),
+  };
+
   const nav = {
     cardView: (childId: string) => {
       const k = getState().children.find((c) => c.id === childId);
@@ -1049,6 +1063,7 @@ export function useSheets() {
       if (m) openSheet(m.name, <MedView id={id} />);
     },
     ...nav,
+    prenatalList: prenatalNav.prenatalList,
     vaccineList: (childId: string) => {
       const k = getState().children.find((c) => c.id === childId);
       if (k) openSheet(`Vacinas de ${k.name}`, <VaccineList childId={childId} />);

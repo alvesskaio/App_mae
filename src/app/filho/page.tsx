@@ -5,6 +5,7 @@ import * as D from '@/lib/dates';
 import { fmt, notesText, sortSubjects, BIMESTRES, type Ranked } from '@/lib/grades';
 import { PRESCRIPTION_NOTICE, mlLabel, statusOf } from '@/lib/medicines';
 import { measureLine, measuresOf } from '@/lib/growth';
+import { prenatalOf } from '@/lib/prenatal';
 import { monthLabel, vaccinesOf } from '@/lib/vaccines';
 import { PHASES, TIPS, TIPS_SAUDE, TIPS_SAUDE_TITLE, TIPS_TITLE, overdue, phaseLine, phaseOf, weeksOf, type Module, type Phase } from '@/lib/phases';
 import { setFilhoTab, useFilhoTab } from '@/lib/view';
@@ -103,6 +104,39 @@ function CardSummary({ s, c, sheets }: { s: AppState; c: Child; sheets: Sheets }
   );
 }
 
+// Resumo dos exames do pré-natal: o que chama atenção agora; a lista completa abre numa folha.
+function PrenatalSummary({ s, c, sheets }: { s: AppState; c: Child; sheets: Sheets }) {
+  const p = prenatalOf(c, s.prenatal);
+  const open = () => sheets.prenatalList(c.id);
+  const due = [...p.late, ...p.now];
+  if (p.weeks == null) {
+    return (
+      <button type="button" className="row flatrow" style={{ marginTop: 12 }} onClick={open}>
+        <div className="grow"><p className="t">Exames do pré-natal</p><p className="s">Informe a data prevista para ver os da sua semana</p></div>
+        <span className="linkish">Ver</span>
+      </button>
+    );
+  }
+  if (due.length === 0) {
+    return (
+      <button type="button" className="row flatrow" style={{ marginTop: 12 }} onClick={open}>
+        <div className="grow"><p className="t">Exames em dia</p><p className="s">{p.next.length ? `Próximo: ${p.next[0].exame}` : 'Nenhum exame pendente'}</p></div>
+        <span className="linkish">Ver</span>
+      </button>
+    );
+  }
+  return (
+    <button type="button" className="vaccard" style={{ marginTop: 12 }} onClick={open}>
+      <span className="vcount">{due.length}</span>
+      <span className="grow">
+        <b>{due.length === 1 ? 'exame para conferir' : 'exames para conferir'}</b>
+        <span className="vnames">{due.slice(0, 2).map((e) => e.exame.split(',')[0].split(' (')[0]).join('; ')}{due.length > 2 ? ` e mais ${due.length - 2}` : ''}</span>
+      </span>
+      <span className="linkish">Ver</span>
+    </button>
+  );
+}
+
 function Tips({ ph, mod }: { ph: Phase; mod: Module }) {
   const title = mod === 'saude' ? TIPS_SAUDE_TITLE : TIPS_TITLE;
   const tips = mod === 'saude' ? TIPS_SAUDE : TIPS;
@@ -152,6 +186,8 @@ function Saude({ s, c, ph, sheets }: { s: AppState; c: Child; ph: Phase; sheets:
           )}
         </>
       )}
+
+      {c.kind === 'pregnancy' && <PrenatalSummary s={s} c={c} sheets={sheets} />}
 
       <div className="sec"><h2 className="h2">{kind}</h2>
         <button type="button" className="btn line small" onClick={() => sheets.eventForm({ category: 'saude' })}><Icons.plus size={18} />Novo</button></div>
