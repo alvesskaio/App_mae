@@ -5,3 +5,7 @@ out/
 .DS_Store
 next-env.d.ts
 *.tsbuildinfo
+.agents/
+.claude/
+_bmad/
+docs_aux/
