@@ -11,14 +11,21 @@ export interface Child {
 }
 export interface Subject { id: string; childId: string; name: string; notes: Note[] }
 export type Category = 'saude' | 'escola' | 'outro';
-export interface AppEvent { id: string; childId: string | null; title: string; date: string; time: string; category: Category }
+export interface AppEvent { id: string; childId: string | null; title: string; date: string; time: string; category: Category;
+  // Como foi (texto livre) e foto do resultado, anotados depois do compromisso.
+  note?: string; notePhoto?: string | null }
 export interface Doc { id: string; childId: string; title: string; date: string; photo: string | null }
+// Remédio prescrito pelo pediatra. O app só registra: não calcula nem sugere dose.
+export interface Medicine { id: string; childId: string; name: string; doseMl: number; time: string; start: string; days: number }
 export interface Boletim { photo: string; at: string }
 
 export type OnbStep = 'welcome' | 'consent' | 'e1' | 'e2' | 'e3';
 export interface OnbKid { id: string; name: string; birth: string }
 export interface Onb { step: OnbStep; pregnant: 'sim' | 'nao' | 'pular' | null; dpp: string; kids: OnbKid[] }
-export interface Routine { days: number[]; start: string; end: string; vacation: string; whatsapp: string; silence: boolean }
+export interface AlertPrefs { exames: boolean; vacinas: boolean; remedios: boolean }
+export interface Routine { days: number[]; start: string; end: string; vacation: string; whatsapp: string; silence: boolean; alerts: AlertPrefs }
+// Só a pergunta que o cadastro não faz: a gestação e a idade dos filhos já dizem se é gestante ou mãe recente.
+export interface Profile { experienced: boolean | null }
 export interface Consent { health: boolean; legal: boolean; stats: boolean; at: string | null }
 
 export interface AppState {
@@ -27,6 +34,7 @@ export interface AppState {
   onb: Onb;
   consent: Consent;
   motherName: string;
+  profile: Profile;
   media: number;
   routine: Routine;
   currentChildId: string | null;
@@ -34,6 +42,7 @@ export interface AppState {
   subjects: Subject[];
   events: AppEvent[];
   docs: Doc[];
+  medicines: Medicine[];
   boletim: Record<string, Boletim>;
 }
 
@@ -46,14 +55,15 @@ let onSaveError: () => void = () => {};
 export const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 
 export const emptyOnb = (): Onb => ({ step: 'welcome', pregnant: null, dpp: '', kids: [] });
-const emptyRoutine = (): Routine => ({ days: [1, 2, 3, 4, 5], start: '08:00', end: '17:00', vacation: '', whatsapp: '', silence: true });
+const emptyAlerts = (): AlertPrefs => ({ exames: true, vacinas: true, remedios: true });
+const emptyRoutine = (): Routine => ({ days: [1, 2, 3, 4, 5], start: '08:00', end: '17:00', vacation: '', whatsapp: '', silence: true, alerts: emptyAlerts() });
 const emptyConsent = (): Consent => ({ health: false, legal: false, stats: false, at: null });
 
 function empty(): AppState {
   return {
-    v: 2, onboarded: false, onb: emptyOnb(), consent: emptyConsent(), motherName: '', media: 6,
+    v: 2, onboarded: false, onb: emptyOnb(), consent: emptyConsent(), motherName: '', profile: { experienced: null }, media: 6,
     routine: emptyRoutine(), currentChildId: null,
-    children: [], subjects: [], events: [], docs: [], boletim: {},
+    children: [], subjects: [], events: [], docs: [], medicines: [], boletim: {},
   };
 }
 
@@ -63,7 +73,8 @@ function normalize(s: Partial<AppState>): AppState {
     ...e, ...s,
     onb: { ...e.onb, ...(s.onb || {}) },
     consent: { ...e.consent, ...(s.consent || {}) },
-    routine: { ...e.routine, ...(s.routine || {}) },
+    profile: { ...e.profile, ...(s.profile || {}) },
+    routine: { ...e.routine, ...(s.routine || {}), alerts: { ...e.routine.alerts, ...(s.routine?.alerts || {}) } },
   } as AppState;
 }
 
@@ -160,6 +171,7 @@ export function removeChild(st: AppState, id: string) {
   st.subjects = st.subjects.filter((x) => x.childId !== id);
   st.events = st.events.filter((x) => x.childId !== id);
   st.docs = st.docs.filter((x) => x.childId !== id);
+  st.medicines = st.medicines.filter((x) => x.childId !== id);
   delete st.boletim[id];
   if (st.currentChildId === id) {
     const next = activeChildren(st)[0];
