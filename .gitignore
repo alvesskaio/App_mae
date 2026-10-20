@@ -7,4 +7,7 @@ next-env.d.ts
 *.tsbuildinfo
 
 # Anotações de trabalho por branch
+.agents/
+.claude/
+_bmad/
 docs_aux/
